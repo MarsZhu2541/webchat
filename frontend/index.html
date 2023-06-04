@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport">
+    <title>Web Chat</title>
+
+    <script src="static/js/vue3.js"></script>
+    <link rel="stylesheet" href="static/css/element-plus.css">
+    <script src="static/js/index.full.min.js"></script>
+    <script src="static/js/axios.min.js"></script>
+
+</head>
+
+<body>
+<div id="app">
+    <div style="display: flex;flex-direction: column;">
+        <div class="common-layout">
+            <el-container>
+                <el-header>
+                    <h1 style="display: inline;">WebChat</h1>
+                    <div style="float: right;" class="flex flex-wrap items-center">
+                        <el-dropdown>
+                            <el-button :circle="true" size="small">
+                                <el-avatar src="https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png"/>
+                            </el-button>
+                            <template #dropdown>
+                                <el-dropdown-menu>
+                                    <!--                                    <el-dropdown-item v-if="user.id==-1">-->
+                                    <!--                                        <el-button @click="showProfile" type="success">-->
+                                    <!--                                            Profile-->
+                                    <!--                                        </el-button>-->
+                                    <!--                                    </el-dropdown-item>-->
+                                    <!--                                    <el-dropdown-item>-->
+                                    <!--                                        <el-button @click="logout" type="danger" v-if="user.id!=-1">-->
+                                    <!--                                            Logout &nbsp-->
+                                    <!--                                        </el-button>-->
+                                    <!--                                    </el-dropdown-item>-->
+                                    <el-radio-group v-model="userName" size="large">
+                                        <el-radio-button
+                                                v-for="(user,id) in this.userList"
+                                                :label="user"
+                                        >
+                                        </el-radio-button>
+
+                                    </el-radio-group>
+                                </el-dropdown-menu>
+                            </template>
+                        </el-dropdown>
+                    </div>
+                </el-header>
+                <el-container>
+                    <el-aside width="10%">
+                        <p style="position: absolute;bottom: 15%;">待开发</p>
+                    </el-aside>
+                    <el-main>
+                        <div class="messagePanel" ref="scrollDiv">
+                            <div v-for="msg in messageList">
+                                <p>{{msg.userName}}: {{msg.text}}</p>
+                            </div>
+                        </div>
+                        <div style="position: absolute;bottom: 2%; width: 45%">
+                            <el-input @change="sendText" v-model="textInput" class="newTodoInput"
+                                      :placeholder="'你是'+userName"/>
+                        </div>
+                    </el-main>
+                </el-container>
+            </el-container>
+        </div>
+    </div>
+</div>
+<script src="main.js"></script>
+</body>
+
+</html>
+<style lang="less">
+    * {
+        padding: 0;
+        margin: 0;
+        box-sizing: border-box;
+    }
+
+    html, body {
+        /*将height设置为100%,使得内容铺满屏幕*/
+        /*且#container有高度基于的父元素*/
+        height: 100%;
+        width: 100%;
+        background-color: #dddddd;
+    }
+
+    #app {
+        font-family: Avenir, Helvetica, Arial, sans-serif;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        color: #2c3e50;
+        background: #bbccd6 linear-gradient(to bottom right, #9ba5e1, #01b48c);
+        width: 100%;
+        height: 100vh;
+    }
+
+    h1 {
+        font-family: Arial, Helvetica, sans-serif;
+    }
+
+    .example-showcase .el-dropdown + .el-dropdown {
+        margin-left: 15px;
+    }
+
+    .example-showcase .el-dropdown-link {
+        cursor: pointer;
+        color: var(--el-color-primary);
+        display: flex;
+        align-items: center;
+    }
+
+    .common-layout {
+        height: 100%;
+        width: 60%;
+        margin-top: 2%;
+        align-self: center;
+        text-align: center
+    }
+
+    .newTodoInput {
+        height: 47px;
+    }
+
+    .messagePanel {
+        overflow-y: scroll;
+        margin-right: 15%;
+        margin-bottom: 2%;
+        display: block;
+        height: 70vh;
+    }
+
+    .messagePanel::-webkit-scrollbar {
+        display: none;
+    }
+</style>
