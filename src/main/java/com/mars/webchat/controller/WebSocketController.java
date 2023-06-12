@@ -1,7 +1,9 @@
 package com.mars.webchat.controller;
 
 import com.mars.webchat.model.ChatMessage;
+import com.mars.webchat.service.MessageService;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import com.google.gson.Gson;
 
@@ -23,7 +25,7 @@ import static java.util.Arrays.asList;
 @ServerEndpoint("/websocket/{userId}")
 @Component
 @Slf4j
-public class webSocketController {
+public class WebSocketController {
 
     // 与某个客户端的连接会话，需要通过它来给客户端发送数据
     private Session session;
@@ -32,11 +34,15 @@ public class webSocketController {
     private static ConcurrentHashMap<Integer, Session> sessionPool = new ConcurrentHashMap<>();
 
     // concurrent包的线程安全Set,用来存放每个客户端对应的WebSocket对象。
-    private static CopyOnWriteArraySet<webSocketController> webSocketSet = new CopyOnWriteArraySet<>();
+    private static CopyOnWriteArraySet<WebSocketController> webSocketSet = new CopyOnWriteArraySet<>();
     private static com.google.gson.Gson Gson = new Gson();
-
+    private static MessageService messageServiceImpl;
     private static List<String> userList = asList("zwk", "zsj", "zmy", "ymh", "lgh", "zbl");
 
+    @Autowired
+    public void webSocketController(MessageService messageServiceImpl){
+        WebSocketController.messageServiceImpl= messageServiceImpl;
+    }
     /**
      * 建立WebSocket连接
      *
@@ -90,7 +96,9 @@ public class webSocketController {
     @OnMessage
     public void onMessage(String message, @PathParam(value = "userId") Integer userId) {
         log.info("收到客户端发来的消息：{}", message);
-        sendMessageToOthers(userId, Gson.toJson(new ChatMessage(userId.intValue(), userList.get(userId.intValue()), message)));
+        ChatMessage chatMessage = new ChatMessage(userId.intValue(), userList.get(userId.intValue()), message);
+        sendMessageToOthers(userId, Gson.toJson(chatMessage));
+        messageServiceImpl.addMessage(chatMessage);
     }
 
     /**
@@ -116,7 +124,7 @@ public class webSocketController {
      */
     public static void sendAllMessage(String message) {
         log.info("发送消息：{}", message);
-        for (webSocketController webSocket : webSocketSet) {
+        for (WebSocketController webSocket : webSocketSet) {
             try {
                 webSocket.session.getBasicRemote().sendText(message);
             } catch (IOException e) {

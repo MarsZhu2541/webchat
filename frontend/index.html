@@ -56,8 +56,16 @@
                     </el-aside>
                     <el-main>
                         <div class="messagePanel" ref="scrollDiv">
-                            <div v-for="msg in messageList">
-                                <p>{{msg.userName}}: {{msg.text}}</p>
+                            <div class="messageWrapper" v-for="msg in messageList">
+                                <div class="myMessage" v-if="msg.userId==user.id">
+                                    <p style="font-size: 24px">{{msg.userName}}</p>
+                                    <el-tag>{{msg.text}}</el-tag>
+                                </div>
+                                <div class="othersMessage"  v-if="msg.userId!=user.id">
+                                    <p  style="font-size: 24px">{{msg.userName}}</p>
+                                    <el-tag>{{msg.text}}</el-tag>
+                                </div>
+                                </br>
                             </div>
                         </div>
                         <div style="position: absolute;bottom: 2%; width: 45%">
@@ -70,7 +78,7 @@
         </div>
     </div>
 </div>
-<script src="main.js"></script>
+<script type="module" src="main.js"></script>
 </body>
 
 </html>
@@ -116,7 +124,7 @@
 
     .common-layout {
         height: 100%;
-        width: 60%;
+        width: 70%;
         margin-top: 2%;
         align-self: center;
         text-align: center
@@ -128,13 +136,31 @@
 
     .messagePanel {
         overflow-y: scroll;
-        margin-right: 15%;
-        margin-bottom: 2%;
-        display: block;
-        height: 70vh;
+        height: calc(75vh - 50px);
+        margin: 0 auto 0 auto;
     }
 
     .messagePanel::-webkit-scrollbar {
         display: none;
+    }
+
+    .messageWrapper{
+        display: flex;
+    }
+    .myMessage{
+        text-align: right;
+        display: inline-block;
+        margin-left: auto;
+    }
+
+    .othersMessage{
+        text-align: left;
+        display: inline-block;
+        margin-right: auto;
+    }
+    .el-tag{
+        font-size: 36px;
+        white-space: normal;
+        height: auto;
     }
 </style>
