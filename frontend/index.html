@@ -68,8 +68,8 @@
                                 </br>
                             </div>
                         </div>
-                        <div style="position: absolute;bottom: 2%; width: 45%">
-                            <el-input @change="sendText" v-model="textInput" class="newTodoInput"
+                        <div style="position: absolute;bottom: 2%; width: 50%">
+                            <el-input @change="sendText" v-model="textInput" class="messageInput"
                                       :placeholder="'你是'+userName"/>
                         </div>
                     </el-main>
@@ -124,13 +124,13 @@
 
     .common-layout {
         height: 100%;
-        width: 70%;
+        width: 65%;
         margin-top: 2%;
         align-self: center;
         text-align: center
     }
 
-    .newTodoInput {
+    .messageInput {
         height: 47px;
     }
 
@@ -159,8 +159,12 @@
         margin-right: auto;
     }
     .el-tag{
+        text-align: left;
         font-size: 36px;
         white-space: normal;
         height: auto;
+        max-width:70vh;
+        word-break:break-all;
+        color: initial;
     }
 </style>
