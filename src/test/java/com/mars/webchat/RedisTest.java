@@ -12,7 +12,12 @@ class RedisTest {
     private StringRedisTemplate redisTemplate;
     @Test
     void test() {
-//        redisTemplate.opsForValue().set("name", "卷心菜");
+        Long length = redisTemplate.opsForList().size("onlineUsers");
+
+        // 逐个删除数组中的元素
+        for (int i = 0; i < length; i++) {
+            redisTemplate.opsForList().leftPop("onlineUsers");
+        }
     }
 
 }

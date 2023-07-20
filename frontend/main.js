@@ -7,20 +7,31 @@ const App = {
             websocketURL: "ws://124.221.128.48:8081/websocket/",
             baseURL: "http://124.221.128.48:8081/webchat/",
             historyMessages: "historyMessages",
-            user: {id: 1},
+            onlineUsers: "onlineUsers",
+            user: {id: -1, name: "guest"},
+            userName:"guest",
             messageList: [],
             userList: ["zwk", "zsj", "zmy", "ymh", "lgh", "zbl"],
-            userName: "zwk"
+            onlineList: [{
+                info: '⬜ zwk'
+            }, {
+                info: '⬜ zsj'
+            }, {
+                info: '⬜ zmy'
+            }, {
+                info: '⬜ ymh'
+            }, {
+                info: '⬜ lgh'
+            }, {
+                info: '⬜ zbl'
+            },
+
+            ]
         }
-    },
-    mounted() {
-        this.user.id = 0
+    }, mounted() {
         this.initUser()
-        this.initWebSocket()
         this.getHistoryMessages()
-    }
-    ,
-    methods: {
+    }, methods: {
         getHistoryMessages() {
             axios.get(this.baseURL + this.historyMessages)
                 .then(res => {
@@ -32,8 +43,11 @@ const App = {
         },
         initUser() {
 
-        }
-        ,
+            if (localStorage.getItem("userId") !== null) {
+                this.user.id = localStorage.getItem("userId")
+                this.userName = this.userList[this.user.id]
+            }
+        },
         initWebSocket() {
             if (typeof (WebSocket) === "undefined") {
                 alert("您的浏览器不支持socket")
@@ -48,69 +62,95 @@ const App = {
                 this.socket.onmessage = this.getMessage
                 this.socket.onclose = this.onClose
             }
-        }
-        ,
+        },
         open: function () {
             this.showMessage("success", "连接成功ヾ(≧▽≦*)o")
             console.log("socket连接成功")
-        }
-        ,
+            this.getOnlineUsers();
+        },
         error: function () {
             console.log("连接错误")
-            this.showMessage('error', '掉线了TAT，重连中。。。')
-            this.initWebSocket()
-        }
-        ,
+            this.showMessage('error', '连接出错了TAT')
+        },
         getMessage: function (msg) {
-            this.messageList.push(JSON.parse(msg.data))
-            this.handleScrollBottom()
-        }
-        ,
+            let message = JSON.parse(msg.data)
+            switch (message.type) {
+                case "CHAT":
+                    this.messageList.push(message)
+                    this.handleScrollBottom()
+                    break;
+                case "LOGIN":
+                    this.setUserOnline(message.userId, true)
+                    break;
+                case "LOGOUT":
+                    this.setUserOnline(message.userId, false)
+                    break;
+                default:
+                    console.error("UnKnown message type!")
+                    break;
+            }
+        },
         handleScrollBottom() {
             this.$nextTick(() => {
                 let scrollElem = this.$refs.scrollDiv;
                 scrollElem.scrollTo({top: scrollElem.scrollHeight, behavior: 'smooth'});
             })
-        }
-        ,
+        },
         onClose: function () {
             console.log("socket已经关闭")
             this.showMessage('error', '连接断开了°(°ˊДˋ°) ° ')
         }
 
-        ,
-        async sendText() {
+        , sendText() {
             this.messageList.push({
-                userName: this.userName,
-                text: this.textInput,
-                userId: this.user.id
+                userName: this.userName, text: this.textInput, userId: this.user.id
             })
             this.handleScrollBottom()
             this.socket.send(this.textInput)
             this.textInput = ""
-        }
-        ,
-        showProfile() {
+        }, showProfile() {
 
         },
         showMessage(type, msg) {
             this.$message({
-                message: msg,
-                type: type,
+                message: msg, type: type,
             })
+        },
+        getOnlineUsers() {
+            let that = this
+            axios.get(this.baseURL + this.onlineUsers)
+                .then(res => {
+                    that.onlineList.forEach(function (entry, index) {
+                        if (res.data.includes(index)) {
+                            that.setUserOnline(index, true)
+                        } else {
+                            that.setUserOnline(index, false)
+                        }
+                    })
+                }).catch(err => {
+                console.log('错误' + err)
+            })
+        },
+        setUserOnline(id, isOnline) {
+            let status = isOnline ? "🟩 " : "⬜ "
+            this.onlineList[id].info = status + this.userList[id];
         }
-    }
-    ,
-    watch: {
+    }, watch: {
 
         userName(newValue, oldValue) {
+            if(newValue === "guest"){
+                this.getOnlineUsers();
+                return
+            }
+
             this.user.id = this.userList.indexOf(newValue)
+            localStorage.setItem("userId", this.user.id)
             if (this.socket) {
                 this.socket.close()
             }
             this.initWebSocket();
         }
-    }
+    },
 }
 
 const app = Vue.createApp(App);

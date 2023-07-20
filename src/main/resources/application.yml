@@ -5,6 +5,7 @@ spring:
   redis:
     # Redis服务器地址
     host: 124.221.128.48
+#    host: localhost
     # Redis服务器端口号下
     port: 6379
     # 使用的数据库索引，默认是0

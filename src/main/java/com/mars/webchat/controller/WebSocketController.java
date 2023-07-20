@@ -1,7 +1,9 @@
 package com.mars.webchat.controller;
 
 import com.mars.webchat.model.ChatMessage;
+import com.mars.webchat.model.MessageType;
 import com.mars.webchat.service.MessageService;
+import com.mars.webchat.service.UserService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -19,6 +21,7 @@ import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
 
+import static java.lang.Integer.valueOf;
 import static java.util.Arrays.asList;
 
 
@@ -37,12 +40,15 @@ public class WebSocketController {
     private static CopyOnWriteArraySet<WebSocketController> webSocketSet = new CopyOnWriteArraySet<>();
     private static com.google.gson.Gson Gson = new Gson();
     private static MessageService messageServiceImpl;
+    private static UserService userServiceImpl;
     private static List<String> userList = asList("zwk", "zsj", "zmy", "ymh", "lgh", "zbl");
 
     @Autowired
-    public void webSocketController(MessageService messageServiceImpl){
-        WebSocketController.messageServiceImpl= messageServiceImpl;
+    public void webSocketController(MessageService messageServiceImpl, UserService userServiceImpl) {
+        WebSocketController.messageServiceImpl = messageServiceImpl;
+        WebSocketController.userServiceImpl = userServiceImpl;
     }
+
     /**
      * 建立WebSocket连接
      *
@@ -56,6 +62,8 @@ public class WebSocketController {
             Session historySession = sessionPool.get(userId);
             // historySession不为空,说明已经有人登陆账号,应该删除登陆的WebSocket对象
             if (historySession != null) {
+                userServiceImpl.logOff(userId);
+                sendUserOnlineStateMessage(userId, MessageType.LOGOUT);
                 webSocketSet.remove(historySession);
                 historySession.close();
             }
@@ -66,6 +74,8 @@ public class WebSocketController {
         this.session = session;
         webSocketSet.add(this);
         sessionPool.put(userId, session);
+        userServiceImpl.login(userId);
+        sendUserOnlineStateMessage(userId, MessageType.LOGIN);
         log.info("建立连接完成,当前在线人数为：{}", webSocketSet.size());
     }
 
@@ -84,6 +94,9 @@ public class WebSocketController {
      */
     @OnClose
     public void onClose() {
+        Integer userId = valueOf(session.getPathParameters().get("userId"));
+        sendUserOnlineStateMessage(userId, MessageType.LOGOUT);
+        userServiceImpl.logOff(userId);
         webSocketSet.remove(this);
         log.info("连接断开,当前在线人数为：{}", webSocketSet.size());
     }
@@ -96,7 +109,7 @@ public class WebSocketController {
     @OnMessage
     public void onMessage(String message, @PathParam(value = "userId") Integer userId) {
         log.info("收到客户端发来的消息：{}", message);
-        ChatMessage chatMessage = new ChatMessage(userId.intValue(), userList.get(userId.intValue()), message);
+        ChatMessage chatMessage = new ChatMessage(userId, userList.get(userId), message, MessageType.CHAT);
         sendMessageToOthers(userId, Gson.toJson(chatMessage));
         messageServiceImpl.addMessage(chatMessage);
     }
@@ -107,7 +120,7 @@ public class WebSocketController {
      * @param userId  用户ID
      * @param message 发送的消息
      */
-    public static void sendMessageByUser(Integer userId, String message) {
+    public void sendMessageByUser(Integer userId, String message) {
         log.info("用户ID：" + userId + ",推送内容：" + message);
         Session session = sessionPool.get(userId);
         try {
@@ -133,7 +146,7 @@ public class WebSocketController {
         }
     }
 
-    public static void sendMessageToOthers(Integer sender, String message) {
+    public void sendMessageToOthers(Integer sender, String message) {
         log.info("发送消息：{}", message);
 
         Session senderSession = sessionPool.get(sender);
@@ -145,6 +158,10 @@ public class WebSocketController {
                         throw new RuntimeException(e);
                     }
                 });
+    }
+
+    public void sendUserOnlineStateMessage(Integer userId, MessageType type) {
+        sendMessageToOthers(userId, Gson.toJson(new ChatMessage(userId, userList.get(userId), "", type)));
     }
 
 }

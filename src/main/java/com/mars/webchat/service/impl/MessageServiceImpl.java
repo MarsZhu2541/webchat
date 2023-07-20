@@ -27,6 +27,6 @@ public class MessageServiceImpl implements MessageService {
     @Override
     public List<ChatMessage> getAllMessage() {
         List<String> chatMessages = redisTemplate.opsForList().range("chatMessages", 0, -1);
-        return chatMessages.stream().map(msgStr->Gson.fromJson(msgStr,ChatMessage.class)).collect(Collectors.toList());
+        return chatMessages.stream().map(msgStr -> Gson.fromJson(msgStr, ChatMessage.class)).collect(Collectors.toList());
     }
 }
