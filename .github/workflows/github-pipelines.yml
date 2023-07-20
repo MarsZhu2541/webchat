@@ -20,10 +20,10 @@ jobs:
           distribution: 'adopt'
 
       - name: Build and push frontend Docker images
-        run: cd frontend && ./build.sh
+        run: cd frontend && bash build.sh
 
       - name: Build and push backend Docker images
-        run:  mvn clean package && ./build.sh
+        run:  mvn clean package && bash build.sh
 
       - name: Deploy to server
         uses: appleboy/ssh-action@master
