@@ -17,11 +17,12 @@ jobs:
         uses: actions/setup-java@v2
         with:
           java-version: '11'
+          distribution: 'adopt'
 
-      - name: Build and push frontend Docker images 
+      - name: Build and push frontend Docker images
         run: cd frontend && ./build.sh
 
-      - name: Build and push backend Docker images 
+      - name: Build and push backend Docker images
         run:  mvn clean package && ./build.sh
 
       - name: Deploy to server
