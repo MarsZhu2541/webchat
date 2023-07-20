@@ -42,5 +42,5 @@ jobs:
           password: ${{ secrets.SERVER_PASSWORD }}
           script: |
             sudo su
-            ./restartBS.sh
-            ./restartNG.sh
+            bash restartBS.sh
+            bash restartNG.sh
