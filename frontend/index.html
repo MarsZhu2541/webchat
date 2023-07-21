@@ -62,8 +62,8 @@
                                         <p style="font-size: 24px">{{msg.userName}}</p>
                                         <el-tag>{{msg.text}}</el-tag>
                                     </div>
-                                    <div class="othersMessage"  v-if="msg.userId!=user.id">
-                                        <p  style="font-size: 24px">{{msg.userName}}</p>
+                                    <div class="othersMessage" v-if="msg.userId!=user.id">
+                                        <p style="font-size: 24px">{{msg.userName}}</p>
                                         <el-tag>{{msg.text}}</el-tag>
                                     </div>
                                     </br>
@@ -74,7 +74,7 @@
                                           :placeholder="'你是'+userName"></el-input>
                             </div>
                         </div>
-                        <div style="display: inline-block;vertical-align: center;margin:0 0 10px 0">
+                        <div style="display:inline-block; margin:auto; position: absolute">
                             <el-table :data="onlineList">
                                 <el-table-column prop="info" label="在线列表"></el-table-column>
                             </el-table>
@@ -151,27 +151,29 @@
         display: none;
     }
 
-    .messageWrapper{
+    .messageWrapper {
         display: flex;
     }
-    .myMessage{
+
+    .myMessage {
         text-align: right;
         display: inline-block;
         margin-left: auto;
     }
 
-    .othersMessage{
+    .othersMessage {
         text-align: left;
         display: inline-block;
         margin-right: auto;
     }
-    .el-tag{
+
+    .el-tag {
         text-align: left;
         font-size: 36px;
         white-space: normal;
         height: auto;
-        max-width:70vh;
-        word-break:break-all;
+        max-width: 70vh;
+        word-break: break-all;
         color: initial;
     }
 </style>
