@@ -61,10 +61,9 @@ const App = {
                     localStorage.setItem("userId", this.user.id)
                 }
             }
-            if (this.socket) {
-                this.socket.close()
+            if(this.user.id!==-1){
+                this.initWebSocket();
             }
-            this.initWebSocket();
         },
         initWebSocket() {
             if (typeof (WebSocket) === "undefined") {
