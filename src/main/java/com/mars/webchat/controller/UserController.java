@@ -45,6 +45,6 @@ public class UserController {
     public void logout(HttpServletRequest request, final HttpServletResponse response) throws IOException, ServletException {
         request.logout();
 //        response.sendRedirect("http://localhost:8081/webchat/login");
-        response.sendRedirect("http://124.221.128.48/webchat/login");
+        response.sendRedirect("http://124.221.128.48:8081/webchat/login");
     }
 }
