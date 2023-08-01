@@ -8,8 +8,9 @@ const App = {
             baseURL: "http://124.221.128.48:8081/webchat/",
             historyMessages: "historyMessages",
             onlineUsers: "onlineUsers",
+            login: "login",
+            logoutPath: "logout",
             user: {id: -1, name: "guest"},
-            userName:"guest",
             messageList: [],
             userList: ["zwk", "zsj", "zmy", "ymh", "lgh", "zbl"],
             onlineList: [{
@@ -28,8 +29,10 @@ const App = {
 
             ]
         }
-    }, mounted() {
+    },
+    created() {
         this.initUser()
+    }, mounted() {
         this.getHistoryMessages()
     }, methods: {
         getHistoryMessages() {
@@ -45,8 +48,23 @@ const App = {
 
             if (localStorage.getItem("userId") !== null) {
                 this.user.id = localStorage.getItem("userId")
-                this.userName = this.userList[this.user.id]
+                this.user.name = this.userList[this.user.id]
+            } else {
+                const token = this.getQueryString("token")
+                if (token === "") {
+                    window.location.href = this.baseURL + this.login
+                } else {
+                    const [header, payload, signature] = token.split('.');
+                    const decodedPayload = JSON.parse(atob(payload));
+                    this.user.name = decodedPayload.preferred_username;
+                    this.user.id = this.userList.indexOf(this.user.name)
+                    localStorage.setItem("userId", this.user.id)
+                }
             }
+            if (this.socket) {
+                this.socket.close()
+            }
+            this.initWebSocket();
         },
         initWebSocket() {
             if (typeof (WebSocket) === "undefined") {
@@ -66,7 +84,7 @@ const App = {
         open: function () {
             this.showMessage("success", "连接成功ヾ(≧▽≦*)o")
             console.log("socket连接成功")
-            this.getOnlineUsers();
+            setTimeout(this.getOnlineUsers, 200)
         },
         error: function () {
             console.log("连接错误")
@@ -103,13 +121,17 @@ const App = {
 
         , sendText() {
             this.messageList.push({
-                userName: this.userName, text: this.textInput, userId: this.user.id
+                userName: this.user.name, text: this.textInput, userId: this.user.id
             })
             this.handleScrollBottom()
             this.socket.send(this.textInput)
             this.textInput = ""
         }, showProfile() {
-
+            this.showMessage("success", "Hi, " + this.user.name + "! ๑乛◡乛๑")
+        }, logout() {
+            localStorage.clear()
+            this.socket.close()
+            window.location.href = this.baseURL + this.logoutPath;
         },
         showMessage(type, msg) {
             this.$message({
@@ -134,23 +156,18 @@ const App = {
         setUserOnline(id, isOnline) {
             let status = isOnline ? "🟩 " : "⬜ "
             this.onlineList[id].info = status + this.userList[id];
-        }
-    }, watch: {
-
-        userName(newValue, oldValue) {
-            if(newValue === "guest"){
-                this.getOnlineUsers();
-                return
-            }
-
-            this.user.id = this.userList.indexOf(newValue)
-            localStorage.setItem("userId", this.user.id)
-            if (this.socket) {
-                this.socket.close()
-            }
-            this.initWebSocket();
-        }
-    },
+        },
+        getQueryString(name) {
+            var reg = new RegExp("(^|&)" + name + "=([^&]*)(&|$)", "i");
+            var r = window.location.search.substr(1).match(reg); //获取url中"?"符后的字符串并正则匹配
+            var context = "";
+            if (r != null)
+                context = decodeURIComponent(r[2]);
+            reg = null;
+            r = null;
+            return context == null || context == "" || context == "undefined" ? "" : context;
+        },
+    }
 }
 
 const app = Vue.createApp(App);

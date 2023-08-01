@@ -26,25 +26,17 @@
                                 <el-avatar src="https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png"/>
                             </el-button>
                             <template #dropdown>
-                                <el-dropdown-menu>
-                                    <!--                                    <el-dropdown-item v-if="user.id==-1">-->
-                                    <!--                                        <el-button @click="showProfile" type="success">-->
-                                    <!--                                            Profile-->
-                                    <!--                                        </el-button>-->
-                                    <!--                                    </el-dropdown-item>-->
-                                    <!--                                    <el-dropdown-item>-->
-                                    <!--                                        <el-button @click="logout" type="danger" v-if="user.id!=-1">-->
-                                    <!--                                            Logout &nbsp-->
-                                    <!--                                        </el-button>-->
-                                    <!--                                    </el-dropdown-item>-->
-                                    <el-radio-group v-model="userName" size="large">
-                                        <el-radio-button
-                                                v-for="(user,id) in this.userList"
-                                                :label="user"
-                                        >
-                                        </el-radio-button>
-
-                                    </el-radio-group>
+                                <el-dropdown-menu v-if="user.id!=-1">
+                                    <el-dropdown-item>
+                                        <el-button @click="showProfile" type="success">
+                                            Profile
+                                        </el-button>
+                                    </el-dropdown-item>
+                                    <el-dropdown-item>
+                                        <el-button @click="logout" type="danger">
+                                            Logout
+                                        </el-button>
+                                    </el-dropdown-item>
                                 </el-dropdown-menu>
                             </template>
                         </el-dropdown>
@@ -71,10 +63,10 @@
                             </div>
                             <div style="position: absolute;bottom: 2%; width: 50%">
                                 <el-input @change="sendText" v-model="textInput" class="messageInput"
-                                          :placeholder="'你是'+userName"></el-input>
+                                          :placeholder="'你是'+user.name"></el-input>
                             </div>
                         </div>
-                        <div style="display:inline-block; margin:auto; position: absolute">
+                        <div style="display:inline-block; margin:auto 50px; position: absolute">
                             <el-table :data="onlineList">
                                 <el-table-column prop="info" label="在线列表"></el-table-column>
                             </el-table>
