@@ -154,8 +154,8 @@ public class WebSocketController {
                 .forEach(webSocket -> {
                     try {
                         webSocket.session.getBasicRemote().sendText(message);
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
+                    } catch (IOException| IllegalStateException e) {
+                        log.error("Error when sendMessage: ", e);
                     }
                 });
     }
