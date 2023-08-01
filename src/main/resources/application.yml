@@ -33,7 +33,7 @@ keycloak:
   resource: webchat-bs
   credentials:
     secret: Vdfo7TNuYUJhWKssCvoEJWXzcTIoffg7
-  ssl-required: external
+  ssl-required: none
   use-resource-role-mappings: true
   cors: true
   bearer-only: false
