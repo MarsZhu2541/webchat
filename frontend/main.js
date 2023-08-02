@@ -30,11 +30,10 @@ const App = {
             ]
         }
     },
-    async created() {
+    async mounted() {
         await this.initUser()
         this.getHistoryMessages()
-    },  mounted() {
-
+        this.getOnlineUsers()
     }, methods: {
         getHistoryMessages() {
             axios.get(this.baseURL + this.historyMessages)
@@ -96,10 +95,9 @@ const App = {
                 this.socket.onclose = this.onClose
             }
         },
-        open: function () {
+        open() {
             this.showMessage("success", "连接成功ヾ(≧▽≦*)o")
             console.log("socket连接成功")
-            setTimeout(this.getOnlineUsers, 200)
         },
         error: function () {
             console.log("连接错误")
