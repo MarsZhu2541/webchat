@@ -76,6 +76,7 @@ const App = {
                 if (this.user.id !== -1) {
                     this.initWebSocket();
                 }
+                resolve()
             })
         },
         initWebSocket() {
