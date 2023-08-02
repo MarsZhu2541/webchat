@@ -58,6 +58,7 @@ const App = {
                         //first log
                         this.showMessage("info", "Will redirect to login page, please wait...（づ￣3￣）づ");
                         window.location.href = this.baseURL + this.login
+                        reject()
                     } else {
                         try {
                             //redirect from keycloak, validate token
@@ -70,13 +71,14 @@ const App = {
                             //invalidate token, redirect to login page
                             this.showMessage("error", "Invalidate token, please login again... (┯。┯∏)");
                             window.location.href = this.baseURL + this.login
+                            reject()
                         }
                     }
                 }
                 if (this.user.id !== -1) {
-                    this.initWebSocket();
+                    this.initWebSocket()
+                    resolve();
                 }
-                resolve()
             })
         },
         initWebSocket() {
