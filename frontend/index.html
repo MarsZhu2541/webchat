@@ -44,7 +44,13 @@
                 </el-header>
                 <el-container>
                     <el-aside width="5%">
-                        <p style="position: absolute;bottom: 15%;">待开发</p>
+                        <el-link :underline="false" target="_blank" style="position: absolute;bottom: 15%;"
+                                 href="https://github.com/MarsZhu2541/webchat">
+                            <div  style="display: flex; align-items: center;flex-direction: column">
+                                <el-image src="static/pic/github.png" style="width: 32px;height: 32px;"></el-image>
+                                项目源码
+                            </div>
+                        </el-link>
                     </el-aside>
                     <el-main>
                         <div style="width: 80%;display: inline-block">
