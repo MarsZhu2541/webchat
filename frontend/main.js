@@ -30,10 +30,11 @@ const App = {
             ]
         }
     },
-    created() {
-        this.initUser()
-    }, mounted() {
+    async created() {
+        await this.initUser()
         this.getHistoryMessages()
+    },  mounted() {
+
     }, methods: {
         getHistoryMessages() {
             axios.get(this.baseURL + this.historyMessages)
@@ -45,25 +46,37 @@ const App = {
             })
         },
         initUser() {
-
-            if (localStorage.getItem("userId") !== null) {
-                this.user.id = localStorage.getItem("userId")
-                this.user.name = this.userList[this.user.id]
-            } else {
-                const token = this.getQueryString("token")
-                if (token === "") {
-                    window.location.href = this.baseURL + this.login
+            return new Promise(async (resolve, reject) => {
+                if (localStorage.getItem("userId") !== null) {
+                    //have logged
+                    this.user.id = localStorage.getItem("userId")
+                    this.user.name = this.userList[this.user.id]
                 } else {
-                    const [header, payload, signature] = token.split('.');
-                    const decodedPayload = JSON.parse(atob(payload));
-                    this.user.name = decodedPayload.preferred_username;
-                    this.user.id = this.userList.indexOf(this.user.name)
-                    localStorage.setItem("userId", this.user.id)
+                    //haven't logged
+                    const token = this.getQueryString("token")
+                    if (token === "") {
+                        //first log
+                        this.showMessage("info", "Will redirect to login page, please wait...（づ￣3￣）づ");
+                        window.location.href = this.baseURL + this.login
+                    } else {
+                        try {
+                            //redirect from keycloak, validate token
+                            const [header, payload, signature] = token.split('.');
+                            const decodedPayload = JSON.parse(atob(payload));
+                            this.user.name = decodedPayload.preferred_username;
+                            this.user.id = this.userList.indexOf(this.user.name)
+                            localStorage.setItem("userId", this.user.id)
+                        } catch (e) {
+                            //invalidate token, redirect to login page
+                            this.showMessage("error", "Invalidate token, please login again... (┯。┯∏)");
+                            window.location.href = this.baseURL + this.login
+                        }
+                    }
                 }
-            }
-            if(this.user.id!==-1){
-                this.initWebSocket();
-            }
+                if (this.user.id !== -1) {
+                    this.initWebSocket();
+                }
+            })
         },
         initWebSocket() {
             if (typeof (WebSocket) === "undefined") {
@@ -128,6 +141,7 @@ const App = {
         }, showProfile() {
             this.showMessage("success", "Hi, " + this.user.name + "! ๑乛◡乛๑")
         }, logout() {
+            this.showMessage("success", "Ok, but you'll come back right? (▼へ▼メ)");
             localStorage.clear()
             this.socket.close()
             window.location.href = this.baseURL + this.logoutPath;

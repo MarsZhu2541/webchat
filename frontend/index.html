@@ -23,7 +23,7 @@
                     <div style="float: right;" class="flex flex-wrap items-center">
                         <el-dropdown>
                             <el-button :circle="true" size="small">
-                                <el-avatar src="https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png"/>
+                                <el-avatar :src="'static/pic/icon_' + user.name + '.png'"/>
                             </el-button>
                             <template #dropdown>
                                 <el-dropdown-menu v-if="user.id!=-1">
@@ -43,7 +43,7 @@
                     </div>
                 </el-header>
                 <el-container>
-                    <el-aside width="10%">
+                    <el-aside width="5%">
                         <p style="position: absolute;bottom: 15%;">待开发</p>
                     </el-aside>
                     <el-main>
@@ -51,19 +51,28 @@
                             <div class="messagePanel" ref="scrollDiv">
                                 <div class="messageWrapper" v-for="msg in messageList">
                                     <div class="myMessage" v-if="msg.userId==user.id">
-                                        <p style="font-size: 24px">{{msg.userName}}</p>
-                                        <el-tag>{{msg.text}}</el-tag>
+                                        <div style="float: right; margin-left: 10px">
+                                            <el-avatar :src="'static/pic/icon_' + msg.userName + '.png'"/>
+                                        </div>
+                                        <div style="float: left">
+                                            <p style="font-size: 24px">{{msg.userName}}</p>
+                                            <el-tag>{{msg.text}}</el-tag>
+                                        </div>
                                     </div>
                                     <div class="othersMessage" v-if="msg.userId!=user.id">
-                                        <p style="font-size: 24px">{{msg.userName}}</p>
-                                        <el-tag>{{msg.text}}</el-tag>
+                                        <div style="float: left; margin-right: 10px">
+                                            <el-avatar :src="'static/pic/icon_' + msg.userName + '.png'"/>
+                                        </div>
+                                        <div style="float: right">
+                                            <p style="font-size: 24px">{{msg.userName}}</p>
+                                            <el-tag>{{msg.text}}</el-tag>
+                                        </div>
                                     </div>
                                     </br>
                                 </div>
                             </div>
-                            <div style="position: absolute;bottom: 2%; width: 50%">
-                                <el-input @change="sendText" v-model="textInput" class="messageInput"
-                                          :placeholder="'你是'+user.name"></el-input>
+                            <div style="margin-top: 10px">
+                                <el-input @change="sendText" v-model="textInput" class="messageInput"></el-input>
                             </div>
                         </div>
                         <div style="display:inline-block; margin:auto 50px; position: absolute">
@@ -145,6 +154,7 @@
 
     .messageWrapper {
         display: flex;
+        margin-top: 5px;
     }
 
     .myMessage {
