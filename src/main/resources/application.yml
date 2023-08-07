@@ -47,7 +47,7 @@ keycloak:
           patterns:
             - /webchat/login
 openai:
-  secret_key: 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
+  secret_key: sk-xxxx
 proxy: #如果在国内访问，使用这个
   ip: www.baidu.com
   port: 3128

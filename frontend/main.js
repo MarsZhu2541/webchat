@@ -139,10 +139,9 @@ const App = {
                 userName: this.user.name, text: this.textInput, userId: this.user.id
             })
             this.handleScrollBottom()
+            this.socket.send(this.textInput)
             if (this.textInput.startsWith("@ChatGPT ")) {
                 this.sendChatGPTMessage(this.textInput)
-            } else {
-                this.socket.send(this.textInput)
             }
             this.textInput = ""
         }, showProfile() {
@@ -201,7 +200,10 @@ const App = {
             const source = new EventSource(this.baseURL + this.chatSSE +
                 "?userId=" + this.user.id + "&prompt=" + this.textInput);
             source.addEventListener('message', (message) => {
+                console.log("message",message)
+                console.log("message.data",message.data)
                 if (message.data === "[DONE]") {
+                    console.log("DONE")
                     source.close()
                 }else {
                     let res = JSON.parse(message.data).content
