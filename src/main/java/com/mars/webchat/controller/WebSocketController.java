@@ -41,7 +41,7 @@ public class WebSocketController {
     private static com.google.gson.Gson Gson = new Gson();
     private static MessageService messageServiceImpl;
     private static UserService userServiceImpl;
-    private static List<String> userList = asList("zwk", "zsj", "zmy", "ymh", "lgh", "zbl");
+    public static List<String> userList = asList("zwk", "zsj", "zmy", "ymh", "lgh", "zbl", "ChatGPT");
 
     @Autowired
     public void webSocketController(MessageService messageServiceImpl, UserService userServiceImpl) {
@@ -146,7 +146,7 @@ public class WebSocketController {
         }
     }
 
-    public void sendMessageToOthers(Integer sender, String message) {
+    public static void sendMessageToOthers(Integer sender, String message) {
         log.info("发送消息：{}", message);
 
         Session senderSession = sessionPool.get(sender);
@@ -162,6 +162,13 @@ public class WebSocketController {
 
     public void sendUserOnlineStateMessage(Integer userId, MessageType type) {
         sendMessageToOthers(userId, Gson.toJson(new ChatMessage(userId, userList.get(userId), "", type)));
+    }
+
+    public static void sendChatGPTMessage(Integer userId,String message) {
+        int chatGPTUserId = 6;
+        ChatMessage chatMessage = new ChatMessage(chatGPTUserId, userList.get(chatGPTUserId), message, MessageType.CHAT);
+        sendMessageToOthers(userId, Gson.toJson(chatMessage));
+        messageServiceImpl.addMessage(chatMessage);
     }
 
 }

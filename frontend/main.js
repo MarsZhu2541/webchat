@@ -8,11 +8,12 @@ const App = {
             baseURL: "http://124.221.128.48:8081/webchat/",
             historyMessages: "historyMessages",
             onlineUsers: "onlineUsers",
+            chatSSE: "chat/sse",
             login: "login",
             logoutPath: "logout",
             user: {id: -1, name: "guest"},
             messageList: [],
-            userList: ["zwk", "zsj", "zmy", "ymh", "lgh", "zbl"],
+            userList: ["zwk", "zsj", "zmy", "ymh", "lgh", "zbl", "ChatGPT"],
             onlineList: [{
                 info: '⬜ zwk'
             }, {
@@ -50,6 +51,7 @@ const App = {
                     //have logged
                     this.user.id = localStorage.getItem("userId")
                     this.user.name = this.userList[this.user.id]
+                    resolve();
                 } else {
                     //haven't logged
                     const token = this.getQueryString("token")
@@ -137,7 +139,11 @@ const App = {
                 userName: this.user.name, text: this.textInput, userId: this.user.id
             })
             this.handleScrollBottom()
-            this.socket.send(this.textInput)
+            if (this.textInput.startsWith("@ChatGPT ")) {
+                this.sendChatGPTMessage(this.textInput)
+            } else {
+                this.socket.send(this.textInput)
+            }
             this.textInput = ""
         }, showProfile() {
             this.showMessage("success", "Hi, " + this.user.name + "! ๑乛◡乛๑")
@@ -181,6 +187,33 @@ const App = {
             r = null;
             return context == null || context == "" || context == "undefined" ? "" : context;
         },
+        sendChatGPTMessage(textInput) {
+            console.log("sendChatGPTMessage")
+            let that = this
+            let chatGPTMSG = {
+                "userId": 6,
+                "userName": "ChatGPT",
+                "text": "",
+                "type": "CHAT"
+            }
+            this.messageList.push(chatGPTMSG)
+            let chatGPTMessageIndex = this.messageList.length - 1;
+            const source = new EventSource(this.baseURL + this.chatSSE +
+                "?userId=" + this.user.id + "&prompt=" + this.textInput);
+            source.addEventListener('message', (message) => {
+                if (message.data === "[DONE]") {
+                    source.close()
+                }else {
+                    let res = JSON.parse(message.data).content
+                    that.messageList[chatGPTMessageIndex].text += res
+                    that.handleScrollBottom()
+                }
+            });
+            source.addEventListener('close', (event) => {
+                // 连接已关闭
+                console.log("sse closed")
+            });
+        }
     }
 }
 
