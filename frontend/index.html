@@ -53,7 +53,7 @@
                         </el-link>
                     </el-aside>
                     <el-main>
-                        <div style="width: 80%;display: inline-block">
+                        <div style="width: 95%;display: inline-block">
                             <div class="messagePanel" ref="scrollDiv">
                                 <div class="messageWrapper" v-for="msg in messageList">
                                     <div class="myMessage" v-if="msg.userId==user.id">
@@ -77,7 +77,7 @@
                                     </br>
                                 </div>
                             </div>
-                            <div style="margin-top: 10px">
+                            <div style="margin-top: 20px; margin-bottom: 10px">
                                 <el-input @change="sendText" v-model="textInput" class="messageInput"></el-input>
                             </div>
                         </div>
@@ -138,7 +138,7 @@
 
     .common-layout {
         height: 100%;
-        width: 75%;
+        width: 80%;
         margin-top: 2%;
         align-self: center;
         text-align: center

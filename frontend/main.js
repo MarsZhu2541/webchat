@@ -34,7 +34,7 @@ const App = {
     async mounted() {
         await this.initUser()
         this.getHistoryMessages()
-        this.getOnlineUsers()
+        setTimeout(this.getOnlineUsers(), 500)
     }, methods: {
         getHistoryMessages() {
             axios.get(this.baseURL + this.historyMessages)
@@ -46,41 +46,34 @@ const App = {
             })
         },
         initUser() {
-            return new Promise(async (resolve, reject) => {
-                if (localStorage.getItem("userId") !== null) {
-                    //have logged
-                    this.user.id = localStorage.getItem("userId")
-                    this.user.name = this.userList[this.user.id]
-                    resolve();
+            if (localStorage.getItem("userId") !== null) {
+                //have logged
+                this.user.id = localStorage.getItem("userId")
+                this.user.name = this.userList[this.user.id]
+                this.initWebSocket()
+            } else {
+                //haven't logged
+                const token = this.getQueryString("token")
+                if (token === "") {
+                    //first log
+                    this.showMessage("info", "Will redirect to login page, please wait...（づ￣3￣）づ");
+                    window.location.href = this.baseURL + this.login
                 } else {
-                    //haven't logged
-                    const token = this.getQueryString("token")
-                    if (token === "") {
-                        //first log
-                        this.showMessage("info", "Will redirect to login page, please wait...（づ￣3￣）づ");
+                    try {
+                        //redirect from keycloak, validate token
+                        const [header, payload, signature] = token.split('.');
+                        const decodedPayload = JSON.parse(atob(payload));
+                        this.user.name = decodedPayload.preferred_username;
+                        this.user.id = this.userList.indexOf(this.user.name)
+                        localStorage.setItem("userId", this.user.id)
+                        this.initWebSocket()
+                    } catch (e) {
+                        //invalidate token, redirect to login page
+                        this.showMessage("error", "Invalidate token, please login again... (┯。┯∏)");
                         window.location.href = this.baseURL + this.login
-                        reject()
-                    } else {
-                        try {
-                            //redirect from keycloak, validate token
-                            const [header, payload, signature] = token.split('.');
-                            const decodedPayload = JSON.parse(atob(payload));
-                            this.user.name = decodedPayload.preferred_username;
-                            this.user.id = this.userList.indexOf(this.user.name)
-                            localStorage.setItem("userId", this.user.id)
-                        } catch (e) {
-                            //invalidate token, redirect to login page
-                            this.showMessage("error", "Invalidate token, please login again... (┯。┯∏)");
-                            window.location.href = this.baseURL + this.login
-                            reject()
-                        }
                     }
                 }
-                if (this.user.id !== -1) {
-                    this.initWebSocket()
-                    resolve();
-                }
-            })
+            }
         },
         initWebSocket() {
             if (typeof (WebSocket) === "undefined") {
@@ -187,7 +180,6 @@ const App = {
             return context == null || context == "" || context == "undefined" ? "" : context;
         },
         sendChatGPTMessage(textInput) {
-            console.log("sendChatGPTMessage")
             let that = this
             let chatGPTMSG = {
                 "userId": 6,
@@ -200,12 +192,10 @@ const App = {
             const source = new EventSource(this.baseURL + this.chatSSE +
                 "?userId=" + this.user.id + "&prompt=" + this.textInput);
             source.addEventListener('message', (message) => {
-                console.log("message",message)
-                console.log("message.data",message.data)
                 if (message.data === "[DONE]") {
                     console.log("DONE")
                     source.close()
-                }else {
+                } else {
                     let res = JSON.parse(message.data).content
                     that.messageList[chatGPTMessageIndex].text += res
                     that.handleScrollBottom()

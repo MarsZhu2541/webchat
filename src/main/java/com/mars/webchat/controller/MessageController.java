@@ -28,6 +28,7 @@ public class MessageController {
     }
 
     @GetMapping("/chat/sse")
+    @CrossOrigin
     public SseEmitter sseEmitter(Integer userId, String prompt) {
         return chatGPTServiceImpl.chatStream(userId, prompt.replace("@ChatGPT ",""));
     }
