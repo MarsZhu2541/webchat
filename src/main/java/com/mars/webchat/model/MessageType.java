@@ -1,5 +1,5 @@
 package com.mars.webchat.model;
 
 public enum MessageType {
-    CHAT, LOGIN, LOGOUT;
+    CHAT, LOGIN, LOGOUT, CHATGPT_SSE, CHATGPT_DONE;
 }

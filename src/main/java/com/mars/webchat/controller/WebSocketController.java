@@ -2,6 +2,7 @@ package com.mars.webchat.controller;
 
 import com.mars.webchat.model.ChatMessage;
 import com.mars.webchat.model.MessageType;
+import com.mars.webchat.service.ChatGPTService;
 import com.mars.webchat.service.MessageService;
 import com.mars.webchat.service.UserService;
 import lombok.extern.slf4j.Slf4j;
@@ -41,12 +42,14 @@ public class WebSocketController {
     private static com.google.gson.Gson Gson = new Gson();
     private static MessageService messageServiceImpl;
     private static UserService userServiceImpl;
+    private static ChatGPTService chatGPTServiceImpl;
     public static List<String> userList = asList("zwk", "zsj", "zmy", "ymh", "lgh", "zbl", "ChatGPT");
 
     @Autowired
-    public void webSocketController(MessageService messageServiceImpl, UserService userServiceImpl) {
+    public void webSocketController(MessageService messageServiceImpl, UserService userServiceImpl, ChatGPTService chatGPTServiceImpl) {
         WebSocketController.messageServiceImpl = messageServiceImpl;
         WebSocketController.userServiceImpl = userServiceImpl;
+        WebSocketController.chatGPTServiceImpl = chatGPTServiceImpl;
     }
 
     /**
@@ -112,6 +115,10 @@ public class WebSocketController {
         ChatMessage chatMessage = new ChatMessage(userId, userList.get(userId), message, MessageType.CHAT);
         sendMessageToOthers(userId, Gson.toJson(chatMessage));
         messageServiceImpl.addMessage(chatMessage);
+
+        if(message.startsWith("@ChatGPT ")){
+            chatGPTServiceImpl.chatStream(message.replace("@ChatGPT ",""));
+        }
     }
 
     /**
@@ -164,12 +171,15 @@ public class WebSocketController {
         sendMessageToOthers(userId, Gson.toJson(new ChatMessage(userId, userList.get(userId), "", type)));
     }
 
-    public static void sendChatGPTMessage(Integer userId,String message) {
+    public static void sendChatGPTMessage(String message, MessageType type) {
         int chatGPTUserId = 6;
-        ChatMessage chatMessage = new ChatMessage(chatGPTUserId, userList.get(chatGPTUserId), message, MessageType.CHAT);
-        sendMessageToOthers(userId, Gson.toJson(chatMessage));
-        messageServiceImpl.addMessage(chatMessage);
+        ChatMessage chatMessage = new ChatMessage(chatGPTUserId, userList.get(chatGPTUserId), message,type);
+        if(type==MessageType.CHATGPT_DONE){
+            chatMessage.setType(MessageType.CHAT);
+            messageServiceImpl.addMessage(chatMessage);
+        }else {
+            sendAllMessage(Gson.toJson(chatMessage));
+        }
     }
-
 }
 

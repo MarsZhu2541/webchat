@@ -51,7 +51,7 @@ public class ChatGPTServiceImpl implements ChatGPTService {
     }
 
     @Override
-    public SseEmitter chatStream(Integer userId, String message) {
+    public void chatStream(String message) {
 
         ChatGPTStream chatGPTStream = ChatGPTStream.builder()
                 .timeout(600)
@@ -61,12 +61,11 @@ public class ChatGPTServiceImpl implements ChatGPTService {
                 .build()
                 .init();
         SseEmitter sseEmitter = new SseEmitter(-1L);
-        GPTEventSourceListener listener = new GPTEventSourceListener(userId, sseEmitter);
+        GPTEventSourceListener listener = new GPTEventSourceListener(sseEmitter);
         ChatCompletion chatCompletion = ChatCompletion.builder()
                 .user("user")
                 .messages(Arrays.asList(Message.of(message)))
                 .build();
         chatGPTStream.streamChatCompletion(chatCompletion, listener);
-        return sseEmitter;
     }
 }

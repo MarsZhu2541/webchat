@@ -14,6 +14,8 @@ const App = {
             user: {id: -1, name: "guest"},
             messageList: [],
             userList: ["zwk", "zsj", "zmy", "ymh", "lgh", "zbl", "ChatGPT"],
+            chatGPTMessageIndex: 0,
+            waitingIntervalId: 0,
             onlineList: [{
                 info: '⬜ zwk'
             }, {
@@ -34,7 +36,7 @@ const App = {
     async mounted() {
         await this.initUser()
         this.getHistoryMessages()
-        setTimeout(this.getOnlineUsers(), 500)
+        setTimeout(this.getOnlineUsers, 1000)
     }, methods: {
         getHistoryMessages() {
             axios.get(this.baseURL + this.historyMessages)
@@ -111,6 +113,9 @@ const App = {
                 case "LOGOUT":
                     this.setUserOnline(message.userId, false)
                     break;
+                case "CHATGPT_SSE":
+                    this.inputChatGPTMessage(message.text)
+                    break;
                 default:
                     console.error("UnKnown message type!")
                     break;
@@ -134,7 +139,7 @@ const App = {
             this.handleScrollBottom()
             this.socket.send(this.textInput)
             if (this.textInput.startsWith("@ChatGPT ")) {
-                this.sendChatGPTMessage(this.textInput)
+                this.initChatGPTMessage()
             }
             this.textInput = ""
         }, showProfile() {
@@ -179,32 +184,42 @@ const App = {
             r = null;
             return context == null || context == "" || context == "undefined" ? "" : context;
         },
-        sendChatGPTMessage(textInput) {
-            let that = this
+        initChatGPTMessage() {
             let chatGPTMSG = {
                 "userId": 6,
                 "userName": "ChatGPT",
-                "text": "",
+                "text": ".",
                 "type": "CHAT"
             }
             this.messageList.push(chatGPTMSG)
-            let chatGPTMessageIndex = this.messageList.length - 1;
-            const source = new EventSource(this.baseURL + this.chatSSE +
-                "?userId=" + this.user.id + "&prompt=" + this.textInput);
-            source.addEventListener('message', (message) => {
-                if (message.data === "[DONE]") {
-                    console.log("DONE")
-                    source.close()
-                } else {
-                    let res = JSON.parse(message.data).content
-                    that.messageList[chatGPTMessageIndex].text += res
-                    that.handleScrollBottom()
+            this.handleScrollBottom()
+            this.chatGPTMessageIndex = this.messageList.length - 1;
+            let counter = 0
+            this.waitingIntervalId = setInterval(() => {
+                // 要执行的操作
+                if(counter%4===0){
+                    this.messageList[this.chatGPTMessageIndex].text = "."
+                }else if(counter%4===1){
+                    this.messageList[this.chatGPTMessageIndex].text = ".."
+                }else if(counter%4===2){
+                    this.messageList[this.chatGPTMessageIndex].text = "..."
+                }else {
+                    this.messageList[this.chatGPTMessageIndex].text = "...."
                 }
-            });
-            source.addEventListener('close', (event) => {
-                // 连接已关闭
-                console.log("sse closed")
-            });
+                counter++
+            },200);
+        },
+        inputChatGPTMessage(sseText){
+            let chatGPTMSG = this.messageList[this.chatGPTMessageIndex]
+
+            if(this.waitingIntervalId!==0){
+                clearInterval(this.waitingIntervalId)
+                this.waitingIntervalId = 0
+                chatGPTMSG.text = ""
+            }
+
+            chatGPTMSG.text+=sseText
+            this.handleScrollBottom()
         }
     }
 }

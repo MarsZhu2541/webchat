@@ -1,6 +1,7 @@
 package com.mars.webchat.util;
 import com.alibaba.fastjson.JSON;
 import com.mars.webchat.controller.WebSocketController;
+import com.mars.webchat.model.MessageType;
 import com.plexpt.chatgpt.entity.chat.ChatCompletionResponse;
 import com.plexpt.chatgpt.entity.chat.Message;
 
@@ -30,7 +31,6 @@ import okhttp3.sse.EventSourceListener;
 @RequiredArgsConstructor
 public class GPTEventSourceListener extends EventSourceListener {
 
-    final Integer userIdWhoAsk;
     final SseEmitter sseEmitter;
     String last = "";
     @Setter
@@ -56,10 +56,9 @@ public class GPTEventSourceListener extends EventSourceListener {
         log.info("回答中：{}", data);
         if (data.equals("[DONE]")) {
             log.info("回答完成：" + last);
-            sseEmitter.send(data);
             onComplate.accept(last);
             SseHelper.complete(sseEmitter);
-            WebSocketController.sendChatGPTMessage(userIdWhoAsk, last);
+            WebSocketController.sendChatGPTMessage(last, MessageType.CHATGPT_DONE);
             return;
         }
 
@@ -69,8 +68,7 @@ public class GPTEventSourceListener extends EventSourceListener {
         String text = delta.getContent();
         if (text != null) {
             last += text;
-
-            sseEmitter.send(delta);
+            WebSocketController.sendChatGPTMessage(text, MessageType.CHATGPT_SSE);
         }
     }
 
