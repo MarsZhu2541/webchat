@@ -36,7 +36,7 @@ const App = {
     async mounted() {
         await this.initUser()
         this.getHistoryMessages()
-        setTimeout(this.getOnlineUsers, 1000)
+        setTimeout(this.getOnlineUsers, 800)
     }, methods: {
         getHistoryMessages() {
             axios.get(this.baseURL + this.historyMessages)
@@ -105,6 +105,9 @@ const App = {
             switch (message.type) {
                 case "CHAT":
                     this.messageList.push(message)
+                    if (message.text.startsWith("@ChatGPT ")) {
+                        this.initChatGPTMessage()
+                    }
                     this.handleScrollBottom()
                     break;
                 case "LOGIN":
