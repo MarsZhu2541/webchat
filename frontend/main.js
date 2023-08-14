@@ -136,6 +136,9 @@ const App = {
         }
 
         , sendText() {
+            if(this.textInput===""){
+                return;
+            }
             this.messageList.push({
                 userName: this.user.name, text: this.textInput, userId: this.user.id
             })
