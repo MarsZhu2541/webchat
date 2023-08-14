@@ -41,7 +41,7 @@ public class ChatGPTServiceImpl implements ChatGPTService {
 
 
         ChatCompletion chatCompletion = ChatCompletion.builder()
-                .model(ChatCompletion.Model.GPT_3_5_TURBO.getName())
+                .model(ChatCompletion.Model.GPT_3_5_TURBO_0613.getName())
                 .messages(Arrays.asList(Message.of(message)))
                 .maxTokens(3000)
                 .temperature(0.9)
@@ -63,7 +63,7 @@ public class ChatGPTServiceImpl implements ChatGPTService {
         SseEmitter sseEmitter = new SseEmitter(-1L);
         GPTEventSourceListener listener = new GPTEventSourceListener(sseEmitter);
         ChatCompletion chatCompletion = ChatCompletion.builder()
-                .user("user")
+                .model(ChatCompletion.Model.GPT_3_5_TURBO_0613.getName())
                 .messages(Arrays.asList(Message.of(message)))
                 .build();
         chatGPTStream.streamChatCompletion(chatCompletion, listener);
