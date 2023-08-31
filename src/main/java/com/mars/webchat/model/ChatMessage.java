@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.Builder;
 import lombok.ToString;
+//import org.springframework.data.elasticsearch.annotations.Document;
 
 @Getter
 @Setter
@@ -14,6 +15,7 @@ import lombok.ToString;
 @NoArgsConstructor
 @Builder
 @ToString
+//@Document(indexName = "message")
 public class ChatMessage {
     Integer userId;
     String userName;

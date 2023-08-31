@@ -51,3 +51,8 @@ openai:
 proxy: #如果在国内访问，使用这个
   ip: www.baidu.com
   port: 3128
+itbaima:
+  robot:
+    username: 3658439112   #登录的QQ账号
+    login-type: qr_code   #登录的类型，这里选择 qr_code 表示扫码登录
+    protocol: android_watch   #登录的协议，二维码模式下只能选择 android_watch 协议

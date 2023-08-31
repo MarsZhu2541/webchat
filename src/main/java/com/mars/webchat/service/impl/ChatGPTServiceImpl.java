@@ -7,7 +7,6 @@ import com.plexpt.chatgpt.ChatGPTStream;
 import com.plexpt.chatgpt.entity.chat.ChatCompletion;
 import com.plexpt.chatgpt.entity.chat.ChatCompletionResponse;
 import com.plexpt.chatgpt.entity.chat.Message;
-import com.plexpt.chatgpt.util.Proxys;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
@@ -33,9 +32,9 @@ public class ChatGPTServiceImpl implements ChatGPTService {
 
         ChatGPT chatGPT = ChatGPT.builder()
                 .apiKeyList(token)
-                .proxy(Proxys.http(proxyIp, proxyPort))
+//                .proxy(Proxys.http(proxyIp, proxyPort))
                 .timeout(900)
-                .apiHost("https://api.openai.com/") //反向代理地址
+                .apiHost("https://api.openai-forward.com/") //反向代理地址
                 .build()
                 .init();
 
@@ -60,6 +59,7 @@ public class ChatGPTServiceImpl implements ChatGPTService {
                 .apiHost("https://api.openai-forward.com/")
                 .build()
                 .init();
+
         SseEmitter sseEmitter = new SseEmitter(-1L);
         GPTEventSourceListener listener = new GPTEventSourceListener(sseEmitter);
         ChatCompletion chatCompletion = ChatCompletion.builder()
