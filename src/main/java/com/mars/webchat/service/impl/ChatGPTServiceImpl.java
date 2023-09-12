@@ -25,9 +25,8 @@ public class ChatGPTServiceImpl implements ChatGPTService {
     @Value("${proxy.port}")
     private Integer proxyPort;
     @Override
-    public String chat(String message) {
+    public synchronized String chat(List<Message> message) {
         //国内需要代理
-
 
 
         ChatGPT chatGPT = ChatGPT.builder()
@@ -41,7 +40,7 @@ public class ChatGPTServiceImpl implements ChatGPTService {
 
         ChatCompletion chatCompletion = ChatCompletion.builder()
                 .model(ChatCompletion.Model.GPT_3_5_TURBO_0613.getName())
-                .messages(Arrays.asList(Message.of(message)))
+                .messages(message)
                 .maxTokens(3000)
                 .temperature(0.9)
                 .build();

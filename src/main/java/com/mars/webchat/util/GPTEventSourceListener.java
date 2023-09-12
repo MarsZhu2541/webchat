@@ -57,6 +57,7 @@ public class GPTEventSourceListener extends EventSourceListener {
         if (data.equals("[DONE]")) {
             log.info("回答完成：" + last);
             onComplate.accept(last);
+            NormalGroupListener.addMessage(last, Message.Role.ASSISTANT);
             SseHelper.complete(sseEmitter);
             WebSocketController.sendChatGPTMessage(last, MessageType.CHATGPT_DONE);
             return;
