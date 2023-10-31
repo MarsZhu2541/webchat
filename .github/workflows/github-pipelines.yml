@@ -3,8 +3,7 @@ name: CI/CD Pipeline
 on:
   push:
     branches:
-      - master
-
+      - add_qsign
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
@@ -19,25 +18,26 @@ jobs:
           java-version: '17'
           distribution: 'adopt'
 
-      - name: Login to Docker
-        uses: docker/login-action@v2
+      - name: Build project
+        run: mvn clean install -DskipTests
+
+      - name: Copy JAR file to remote server
+        uses: appleboy/scp-action@master
         with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USERNAME }}
+          password: ${{ secrets.SERVER_PASSWORD }}
+          source: ./target/webchat-0.0.1-SNAPSHOT.jar
+          target: /home/mars/app_27
 
-
-      - name: Build and push frontend Docker images
-        run: cd frontend && bash build.sh
-
-      - name: Build and push backend Docker images
-        run:  mvn clean package && bash build.sh
-
-      - name: Deploy to server
+      - name: Start jar
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USERNAME }}
           password: ${{ secrets.SERVER_PASSWORD }}
           script: |
-            bash restartBS.sh
-            bash restartNG.sh
+            sudo su
+            cd app_27
+            source /etc/profile
+            nohup java -jar app.jar -Dspring.config.location=file:application.yml > log.log 2>&1 &

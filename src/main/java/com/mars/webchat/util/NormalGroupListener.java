@@ -31,7 +31,7 @@ public class NormalGroupListener extends MessageListener {
 
     @RobotListenerHandler
     public void handleMessage(GroupMessageEvent event) {
-        String message = event.getMessage().contentToString();
+        String message = event.getMessage().contentToString().replace("@2700547209","");
 
         if (!(event.getMessage().get(1) instanceof At)) {
             return;
@@ -41,9 +41,10 @@ public class NormalGroupListener extends MessageListener {
         }
         log.info("Received group message: {}", message);
         try {
-            addMessage(message, Message.Role.USER);
+
             String chat = chatGPTServiceImpl.chat(messages);
             log.info("Sent group message: {}", chat);
+            addMessage(message, Message.Role.USER);
             event.getSubject().sendMessage(new MessageChainBuilder()
                     .append(new QuoteReply(event.getMessage()))
                     .append(chat)
@@ -52,7 +53,8 @@ public class NormalGroupListener extends MessageListener {
             log.error("Error when send message: ", e);
             event.getSubject().sendMessage(new MessageChainBuilder()
                     .append(new QuoteReply(event.getMessage()))
-                    .append("出错了，请联系管理员qq2541884980")
+                    .append("出错了，请联系管理员qq2541884980\n")
+                    .append(e.getMessage())
                     .build());
         }
     }
@@ -64,6 +66,8 @@ public class NormalGroupListener extends MessageListener {
             messages.add(Message.ofAssistant(chat));
         }
         if(messages.size()>=12){
+            messages.remove(0);
+            messages.remove(0);
             messages.remove(0);
             messages.remove(0);
         }
