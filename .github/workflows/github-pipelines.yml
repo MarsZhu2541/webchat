@@ -3,7 +3,7 @@ name: CI/CD Pipeline
 on:
   push:
     branches:
-      - fearture/add_qsign
+      - feature/add_qsign
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
