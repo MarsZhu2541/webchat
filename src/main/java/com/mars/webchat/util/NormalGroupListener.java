@@ -45,6 +45,7 @@ public class NormalGroupListener extends MessageListener {
             String chat = chatGPTServiceImpl.chat(messages);
             log.info("Sent group message: {}", chat);
             addMessage(message, Message.Role.USER);
+            addMessage(chat, Message.Role.ASSISTANT);
             event.getSubject().sendMessage(new MessageChainBuilder()
                     .append(new QuoteReply(event.getMessage()))
                     .append(chat)

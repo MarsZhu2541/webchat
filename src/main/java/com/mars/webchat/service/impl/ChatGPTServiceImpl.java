@@ -1,7 +1,6 @@
 package com.mars.webchat.service.impl;
 
 import com.mars.webchat.service.ChatGPTService;
-import com.mars.webchat.util.GPTEventSourceListener;
 import com.plexpt.chatgpt.ChatGPT;
 import com.plexpt.chatgpt.ChatGPTStream;
 import com.plexpt.chatgpt.entity.chat.ChatCompletion;
@@ -9,7 +8,6 @@ import com.plexpt.chatgpt.entity.chat.ChatCompletionResponse;
 import com.plexpt.chatgpt.entity.chat.Message;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import java.util.Arrays;
 import java.util.List;
 
@@ -59,12 +57,9 @@ public class ChatGPTServiceImpl implements ChatGPTService {
                 .build()
                 .init();
 
-        SseEmitter sseEmitter = new SseEmitter(-1L);
-        GPTEventSourceListener listener = new GPTEventSourceListener(sseEmitter);
         ChatCompletion chatCompletion = ChatCompletion.builder()
                 .model(ChatCompletion.Model.GPT_3_5_TURBO_0613.getName())
                 .messages(Arrays.asList(Message.of(message)))
                 .build();
-        chatGPTStream.streamChatCompletion(chatCompletion, listener);
     }
 }
