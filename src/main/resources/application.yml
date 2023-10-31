@@ -1,18 +1,18 @@
 server:
   port: 6379
 openai:
-  secret_key: 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
+  secret_key: sk-xxx
 proxy: #如果在国内访问，使用这个
   ip: www.baidu.com
   port: 3128
 itbaima:
   robot:
     username: 2700547209   #登录的QQ账号xz
-    password: xxnsgtrd0.         #QQ账号的密码
+    password: xxx         #QQ账号的密码
     login-type: password    #登录的类型，这里选择 password 表示账号密码登录
     protocol: android_pad   #协议可以选择安卓手机 android_phone 或是平板 android_pad 协议
     signer:
       version: 8.9.63             #使用的客户端版本
-      url: http://124.221.128.48:8180  #刚刚部署的签名服务器地址
+      url: xxx  #刚刚部署的签名服务器地址
       type: fuqiuluo              #使用的签名服务器类型
-      key: 13345987236                 #访问秘钥，默认为114514
+      key: xxx               #访问秘钥，默认为114514
