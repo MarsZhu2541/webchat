@@ -31,7 +31,7 @@ public class ChatGPTServiceImpl implements ChatGPTService {
                 .apiKeyList(token)
 //                .proxy(Proxys.http(proxyIp, proxyPort))
                 .timeout(900)
-                .apiHost("https://api.openai-forward.com/") //反向代理地址
+                .apiHost("https://render.openai-forward.com") //反向代理地址
                 .build()
                 .init();
 
