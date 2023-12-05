@@ -1,6 +1,7 @@
 package com.mars.webchat.util;
 
 import com.mars.webchat.service.impl.ChatGPTServiceImpl;
+import com.plexpt.chatgpt.exception.ChatException;
 import lombok.extern.slf4j.Slf4j;
 import net.itbaima.robot.event.RobotListener;
 import net.itbaima.robot.event.RobotListenerHandler;
@@ -31,7 +32,7 @@ public class NormalGroupListener extends MessageListener {
 
     @RobotListenerHandler
     public void handleMessage(GroupMessageEvent event) {
-        String message = event.getMessage().contentToString().replace("@2700547209","");
+        String message = event.getMessage().contentToString().replace("@2700547209", "");
 
         if (!(event.getMessage().get(1) instanceof At)) {
             return;
@@ -41,8 +42,19 @@ public class NormalGroupListener extends MessageListener {
         }
         log.info("Received group message: {}", message);
         try {
-
             addMessage(message, Message.Role.USER);
+            String chat = chatGPTServiceImpl.chat(messages);
+            log.info("Sent group message: {}", chat);
+            addMessage(chat, Message.Role.ASSISTANT);
+            event.getSubject().sendMessage(new MessageChainBuilder()
+                    .append(new QuoteReply(event.getMessage()))
+                    .append(chat)
+                    .build());
+        } catch (ChatException e) {
+            messages.remove(0);
+            messages.remove(0);
+            messages.remove(0);
+            messages.remove(0);
             String chat = chatGPTServiceImpl.chat(messages);
             log.info("Sent group message: {}", chat);
             addMessage(chat, Message.Role.ASSISTANT);
@@ -60,13 +72,13 @@ public class NormalGroupListener extends MessageListener {
         }
     }
 
-    public static synchronized void addMessage(String chat, Message.Role role){
-        if(role == Message.Role.USER){
+    public static synchronized void addMessage(String chat, Message.Role role) {
+        if (role == Message.Role.USER) {
             messages.add(Message.of(chat));
-        }else {
+        } else {
             messages.add(Message.ofAssistant(chat));
         }
-        if(messages.size()>=12){
+        if (messages.size() >= 12) {
             messages.remove(0);
             messages.remove(0);
             messages.remove(0);
