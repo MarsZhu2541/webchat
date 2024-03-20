@@ -32,7 +32,7 @@ public class NormalGroupListener extends MessageListener {
 
     @RobotListenerHandler
     public void handleMessage(GroupMessageEvent event) {
-        String message = event.getMessage().contentToString().replace("@2700547209", "");
+        String message = event.getMessage().contentToString().replace("@"+qqNumber, "");
 
         if (!(event.getMessage().get(1) instanceof At)) {
             return;
@@ -51,6 +51,11 @@ public class NormalGroupListener extends MessageListener {
                     .append(chat)
                     .build());
         } catch (ChatException e) {
+            event.getSubject().sendMessage(new MessageChainBuilder()
+                    .append(new QuoteReply(event.getMessage()))
+                    .append("出错了，我再试一把\n")
+                    .append(e.getMessage())
+                    .build());
             messages.remove(0);
             messages.remove(0);
             messages.remove(0);
