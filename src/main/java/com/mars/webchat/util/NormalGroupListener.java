@@ -6,8 +6,11 @@ import lombok.extern.slf4j.Slf4j;
 import net.itbaima.robot.event.RobotListener;
 import net.itbaima.robot.event.RobotListenerHandler;
 import net.itbaima.robot.listener.MessageListener;
+import net.mamoe.mirai.contact.Group;
 import net.mamoe.mirai.event.events.GroupMessageEvent;
+import net.mamoe.mirai.event.events.GroupMessageSyncEvent;
 import net.mamoe.mirai.message.data.At;
+import net.mamoe.mirai.message.data.MessageChain;
 import net.mamoe.mirai.message.data.MessageChainBuilder;
 import net.mamoe.mirai.message.data.QuoteReply;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -41,19 +44,38 @@ public class NormalGroupListener extends MessageListener {
             return;
         }
         log.info("Received group message: {}", message);
+        sendMsg(event, message);
+    }
+
+    private void sendMsg(GroupMessageEvent event, String message) {
+        sendMessage(message, event.getSubject(), event.getMessage());
+    }
+
+    @RobotListenerHandler
+    public void handleSelfMessage(GroupMessageSyncEvent event) {
+        String message = event.getMessage().contentToString().replace("@"+qqNumber, "");
+
+        if(message.contains("tc")){
+            message = message.replace("tc","");
+            log.info("Received self message: {}", message);
+            sendMessage(message, event.getSubject(), event.getMessage());
+        }
+    }
+
+    private void sendMessage(String message, Group subject, MessageChain message2) {
         try {
             addMessage(message, Message.Role.USER);
             String chat = chatGPTServiceImpl.chat(messages);
             log.info("Sent group message: {}", chat);
             addMessage(chat, Message.Role.ASSISTANT);
-            event.getSubject().sendMessage(new MessageChainBuilder()
-                    .append(new QuoteReply(event.getMessage()))
+            subject.sendMessage(new MessageChainBuilder()
+                    .append(new QuoteReply(message2))
                     .append(chat)
                     .build());
         } catch (ChatException e) {
-            event.getSubject().sendMessage(new MessageChainBuilder()
-                    .append(new QuoteReply(event.getMessage()))
-                    .append("出错了，我再试一把\n")
+            subject.sendMessage(new MessageChainBuilder()
+                    .append(new QuoteReply(message2))
+                    .append("出错了，等我再试一把\n")
                     .append(e.getMessage())
                     .build());
             messages.remove(0);
@@ -63,19 +85,20 @@ public class NormalGroupListener extends MessageListener {
             String chat = chatGPTServiceImpl.chat(messages);
             log.info("Sent group message: {}", chat);
             addMessage(chat, Message.Role.ASSISTANT);
-            event.getSubject().sendMessage(new MessageChainBuilder()
-                    .append(new QuoteReply(event.getMessage()))
+            subject.sendMessage(new MessageChainBuilder()
+                    .append(new QuoteReply(message2))
                     .append(chat)
                     .build());
         } catch (Exception e) {
             log.error("Error when send message: ", e);
-            event.getSubject().sendMessage(new MessageChainBuilder()
-                    .append(new QuoteReply(event.getMessage()))
+            subject.sendMessage(new MessageChainBuilder()
+                    .append(new QuoteReply(message2))
                     .append("出错了，请联系管理员qq2541884980\n")
                     .append(e.getMessage())
                     .build());
         }
     }
+
 
     public static synchronized void addMessage(String chat, Message.Role role) {
         if (role == Message.Role.USER) {
@@ -90,4 +113,6 @@ public class NormalGroupListener extends MessageListener {
             messages.remove(0);
         }
     }
+
+
 }

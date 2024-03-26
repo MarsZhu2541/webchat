@@ -17,6 +17,6 @@ public class ChatGPTTest {
 
     @Test
     void test() {
-        System.out.println(chatGPTServiceImpl.chat(List.of(Message.of("你是谁"))));
+        System.out.println(chatGPTServiceImpl.chat(List.of(Message.of("你是chatgpt4.0吗"))));
     }
 }

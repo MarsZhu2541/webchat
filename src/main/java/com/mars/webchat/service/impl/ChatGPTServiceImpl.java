@@ -31,13 +31,13 @@ public class ChatGPTServiceImpl implements ChatGPTService {
                 .apiKeyList(token)
 //                .proxy(Proxys.http(proxyIp, proxyPort))
                 .timeout(900)
-                .apiHost("https://render.openai-forward.com") //反向代理地址
+                .apiHost("https://api.gpts.vin") //反向代理地址
                 .build()
                 .init();
 
 
         ChatCompletion chatCompletion = ChatCompletion.builder()
-                .model(ChatCompletion.Model.GPT_3_5_TURBO_0613.getName())
+                .model(ChatCompletion.Model.GPT4Turbo.getName())
                 .messages(message)
                 .maxTokens(3000)
                 .temperature(0.9)
