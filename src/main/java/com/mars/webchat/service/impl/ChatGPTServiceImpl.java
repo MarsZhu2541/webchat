@@ -18,10 +18,10 @@ public class ChatGPTServiceImpl implements ChatGPTService {
     @Value("${openai.secret_key}")
     private List<String> token;
 
-    @Value("${proxy.ip}")
-    private String proxyIp;
-    @Value("${proxy.port}")
-    private Integer proxyPort;
+//    @Value("${proxy.ip}")
+//    private String proxyIp;
+//    @Value("${proxy.port}")
+//    private Integer proxyPort;
     @Override
     public synchronized String chat(List<Message> message) {
         //国内需要代理
@@ -31,13 +31,13 @@ public class ChatGPTServiceImpl implements ChatGPTService {
                 .apiKeyList(token)
 //                .proxy(Proxys.http(proxyIp, proxyPort))
                 .timeout(900)
-                .apiHost("https://api.gpts.vin") //反向代理地址
+                .apiHost("https://hk.xty.app") //反向代理地址
                 .build()
                 .init();
 
 
         ChatCompletion chatCompletion = ChatCompletion.builder()
-                .model(ChatCompletion.Model.GPT4Turbo.getName())
+                .model(ChatCompletion.Model.GPT_3_5_TURBO_0613.getName())
                 .messages(message)
                 .maxTokens(3000)
                 .temperature(0.9)

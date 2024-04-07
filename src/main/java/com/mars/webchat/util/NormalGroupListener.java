@@ -62,33 +62,17 @@ public class NormalGroupListener extends MessageListener {
         }
     }
 
-    private void sendMessage(String message, Group subject, MessageChain message2) {
+    private synchronized void sendMessage(String message, Group subject, MessageChain message2) {
         try {
-            addMessage(message, Message.Role.USER);
-            String chat = chatGPTServiceImpl.chat(messages);
-            log.info("Sent group message: {}", chat);
-            addMessage(chat, Message.Role.ASSISTANT);
-            subject.sendMessage(new MessageChainBuilder()
-                    .append(new QuoteReply(message2))
-                    .append(chat)
-                    .build());
+            send(message, subject, message2);
         } catch (ChatException e) {
             subject.sendMessage(new MessageChainBuilder()
                     .append(new QuoteReply(message2))
-                    .append("出错了，等我再试一把\n")
+                    .append("出错了，憋急，等我再试一把！\n")
                     .append(e.getMessage())
                     .build());
-            messages.remove(0);
-            messages.remove(0);
-            messages.remove(0);
-            messages.remove(0);
-            String chat = chatGPTServiceImpl.chat(messages);
-            log.info("Sent group message: {}", chat);
-            addMessage(chat, Message.Role.ASSISTANT);
-            subject.sendMessage(new MessageChainBuilder()
-                    .append(new QuoteReply(message2))
-                    .append(chat)
-                    .build());
+            messages.clear();
+            send(message, subject, message2);
         } catch (Exception e) {
             log.error("Error when send message: ", e);
             subject.sendMessage(new MessageChainBuilder()
@@ -97,6 +81,17 @@ public class NormalGroupListener extends MessageListener {
                     .append(e.getMessage())
                     .build());
         }
+    }
+
+    private void send(String message, Group subject, MessageChain message2) {
+        addMessage(message, Message.Role.USER);
+        String chat = chatGPTServiceImpl.chat(messages);
+        log.info("Sent group message: {}", chat);
+        addMessage(chat, Message.Role.ASSISTANT);
+        subject.sendMessage(new MessageChainBuilder()
+                .append(new QuoteReply(message2))
+                .append(chat)
+                .build());
     }
 
 
