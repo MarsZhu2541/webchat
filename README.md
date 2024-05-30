@@ -20,4 +20,9 @@ sh build.sh
 
 cd frontend
 sh build.sh
+
+
+
+# run qsign
+docker run -d --restart=always --name qsign -p 8080:8080 -e BASE_PATH=/srv/qsign/qsign/txlib/8.9.63 xzhouqd/qsign:core-1.1.9
 ```

@@ -3,6 +3,7 @@ package com.mars.webchat.service.impl;
 import com.mars.webchat.service.ChatGPTService;
 import com.plexpt.chatgpt.ChatGPT;
 import com.plexpt.chatgpt.ChatGPTStream;
+import com.plexpt.chatgpt.Images;
 import com.plexpt.chatgpt.entity.chat.ChatCompletion;
 import com.plexpt.chatgpt.entity.chat.ChatCompletionResponse;
 import com.plexpt.chatgpt.entity.chat.Message;
@@ -28,13 +29,13 @@ public class ChatGPTServiceImpl implements ChatGPTService {
 
 
         ChatGPT chatGPT = ChatGPT.builder()
-                .apiKeyList(token)
 //                .proxy(Proxys.http(proxyIp, proxyPort))
                 .timeout(900)
                 .apiHost("https://hk.xty.app") //反向代理地址
                 .build()
                 .init();
 
+        Images build = Images.builder().build();
 
         ChatCompletion chatCompletion = ChatCompletion.builder()
                 .model(ChatCompletion.Model.GPT_3_5_TURBO_0613.getName())
