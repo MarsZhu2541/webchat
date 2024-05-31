@@ -30,6 +30,7 @@ public class ChatGPTServiceImpl implements ChatGPTService {
 
         ChatGPT chatGPT = ChatGPT.builder()
 //                .proxy(Proxys.http(proxyIp, proxyPort))
+                .apiKeyList(token)
                 .timeout(900)
                 .apiHost("https://hk.xty.app") //反向代理地址
                 .build()
