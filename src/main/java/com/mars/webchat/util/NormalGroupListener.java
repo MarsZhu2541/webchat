@@ -1,6 +1,7 @@
 package com.mars.webchat.util;
 
 import com.mars.webchat.service.impl.ChatGPTServiceImpl;
+import com.mars.webchat.service.impl.RandomImageServiceImpl;
 import com.plexpt.chatgpt.exception.ChatException;
 import lombok.extern.slf4j.Slf4j;
 import net.itbaima.robot.event.RobotListener;
@@ -9,10 +10,7 @@ import net.itbaima.robot.listener.MessageListener;
 import net.mamoe.mirai.contact.Group;
 import net.mamoe.mirai.event.events.GroupMessageEvent;
 import net.mamoe.mirai.event.events.GroupMessageSyncEvent;
-import net.mamoe.mirai.message.data.At;
-import net.mamoe.mirai.message.data.MessageChain;
-import net.mamoe.mirai.message.data.MessageChainBuilder;
-import net.mamoe.mirai.message.data.QuoteReply;
+import net.mamoe.mirai.message.data.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import com.plexpt.chatgpt.entity.chat.Message;
@@ -31,6 +29,9 @@ public class NormalGroupListener extends MessageListener {
     @Autowired
     private ChatGPTServiceImpl chatGPTServiceImpl;
 
+    @Autowired
+    private RandomImageServiceImpl randomImageServiceImpl;
+
     private static List<Message> messages = new ArrayList<>();
 
     @RobotListenerHandler
@@ -44,6 +45,10 @@ public class NormalGroupListener extends MessageListener {
             return;
         }
         log.info("Received group message: {}", message);
+        if(isNeedImage(message)){
+            sendImage(event.getSubject(), event.getMessage());
+            return;
+        }
         sendMsg(event, message);
     }
 
@@ -54,10 +59,14 @@ public class NormalGroupListener extends MessageListener {
     @RobotListenerHandler
     public void handleSelfMessage(GroupMessageSyncEvent event) {
         String message = event.getMessage().contentToString().replace("@"+qqNumber, "");
-
         if(message.contains("tc")){
             message = message.replace("tc","");
             log.info("Received self message: {}", message);
+
+            if(isNeedImage(message)){
+                sendImage(event.getSubject(), event.getMessage());
+                return;
+            }
             sendMessage(message, event.getSubject(), event.getMessage());
         }
     }
@@ -109,5 +118,17 @@ public class NormalGroupListener extends MessageListener {
         }
     }
 
+    private boolean isNeedImage(String msg){
+        return msg.contains("猫");
+    }
+
+    private void sendImage(Group subject, MessageChain chain){
+        Image image = randomImageServiceImpl.getImage(subject);
+        log.info("Sent group image message: {}", image.getImageId());
+        subject.sendMessage(new MessageChainBuilder()
+                .append(new QuoteReply(chain))
+                .append(image)
+                .build());
+    }
 
 }
