@@ -14,8 +14,6 @@ import java.io.IOException;
 @Service
 public class RandomImageServiceImpl implements RandomImageService {
     OkHttpClient client = new OkHttpClient().newBuilder().build();
-    @Resource
-    Bot bot;
     @Override
     public Image getImage(Group subject) {
         Request request = new Request.Builder()

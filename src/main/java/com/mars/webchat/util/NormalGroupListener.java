@@ -1,5 +1,7 @@
 package com.mars.webchat.util;
 
+import com.mars.webchat.service.BaiduImageService;
+import com.mars.webchat.service.impl.BaiduImageServiceImpl;
 import com.mars.webchat.service.impl.ChatGPTServiceImpl;
 import com.mars.webchat.service.impl.RandomImageServiceImpl;
 import com.plexpt.chatgpt.exception.ChatException;
@@ -27,10 +29,14 @@ public class NormalGroupListener extends MessageListener {
     private long qqNumber;
 
     @Autowired
-    private ChatGPTServiceImpl chatGPTServiceImpl;
+    private ChatGPTServiceImpl chatGPTService;
 
     @Autowired
-    private RandomImageServiceImpl randomImageServiceImpl;
+    private RandomImageServiceImpl randomImageService;
+
+
+    @Autowired
+    private BaiduImageServiceImpl baiduImageService;
 
     private static List<Message> messages = new ArrayList<>();
 
@@ -45,15 +51,8 @@ public class NormalGroupListener extends MessageListener {
             return;
         }
         log.info("Received group message: {}", message);
-        if(isNeedImage(message)){
-            sendImage(event.getSubject(), event.getMessage());
-            return;
-        }
-        sendMsg(event, message);
-    }
 
-    private void sendMsg(GroupMessageEvent event, String message) {
-        sendMessage(message, event.getSubject(), event.getMessage());
+        invokeFunctionOnDemand(message, event.getSubject(), event.getMessage());
     }
 
     @RobotListenerHandler
@@ -62,16 +61,11 @@ public class NormalGroupListener extends MessageListener {
         if(message.contains("tc")){
             message = message.replace("tc","");
             log.info("Received self message: {}", message);
-
-            if(isNeedImage(message)){
-                sendImage(event.getSubject(), event.getMessage());
-                return;
-            }
-            sendMessage(message, event.getSubject(), event.getMessage());
+            invokeFunctionOnDemand(message, event.getSubject(), event.getMessage());
         }
     }
 
-    private synchronized void sendMessage(String message, Group subject, MessageChain message2) {
+    private synchronized void sendChatGPTMessage(String message, Group subject, MessageChain message2) {
         try {
             send(message, subject, message2);
         } catch (ChatException e) {
@@ -94,7 +88,7 @@ public class NormalGroupListener extends MessageListener {
 
     private void send(String message, Group subject, MessageChain message2) {
         addMessage(message, Message.Role.USER);
-        String chat = chatGPTServiceImpl.chat(messages);
+        String chat = chatGPTService.chat(messages);
         log.info("Sent group message: {}", chat);
         addMessage(chat, Message.Role.ASSISTANT);
         subject.sendMessage(new MessageChainBuilder()
@@ -118,12 +112,11 @@ public class NormalGroupListener extends MessageListener {
         }
     }
 
-    private boolean isNeedImage(String msg){
+    private boolean isNeedCatImage(String msg){
         return msg.contains("猫");
     }
 
-    private void sendImage(Group subject, MessageChain chain){
-        Image image = randomImageServiceImpl.getImage(subject);
+    private void sendImage(Group subject, MessageChain chain, Image image){
         log.info("Sent group image message: {}", image.getImageId());
         subject.sendMessage(new MessageChainBuilder()
                 .append(new QuoteReply(chain))
@@ -131,4 +124,26 @@ public class NormalGroupListener extends MessageListener {
                 .build());
     }
 
+    private void invokeFunctionOnDemand(String message, Group subject, MessageChain messageQuote){
+        try {
+            if(isNeedCatImage(message)){
+                sendImage(subject, messageQuote, randomImageService.getImage(subject));
+                return;
+            }
+            if(isNeedBaiduImage(message)){
+                sendImage(subject, messageQuote, baiduImageService.getImage(subject, message.replace("搜图", "")));
+                return;
+            }
+            sendChatGPTMessage(message, subject, messageQuote);
+        }catch (RuntimeException e){
+            subject.sendMessage(new MessageChainBuilder()
+                    .append(new QuoteReply(messageQuote))
+                    .append(e.getMessage())
+                    .build());
+        }
+    }
+
+    private boolean isNeedBaiduImage(String message) {
+        return message.contains("搜图");
+    }
 }
