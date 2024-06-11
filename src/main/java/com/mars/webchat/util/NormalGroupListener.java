@@ -1,6 +1,6 @@
 package com.mars.webchat.util;
 
-import com.mars.webchat.service.BaiduImageService;
+import com.mars.webchat.model.ImageMessage;
 import com.mars.webchat.service.impl.BaiduImageServiceImpl;
 import com.mars.webchat.service.impl.ChatGPTServiceImpl;
 import com.mars.webchat.service.impl.RandomImageServiceImpl;
@@ -131,7 +131,9 @@ public class NormalGroupListener extends MessageListener {
                 return;
             }
             if(isNeedBaiduImage(message)){
-                sendImage(subject, messageQuote, baiduImageService.getImage(subject, message.replace("搜图", "")));
+                log.info("Need Baidu Image");
+                ImageMessage imageMessage = baiduImageService.getImage(subject, message.replace("搜图", ""));
+                sendImageWithMessage(subject, messageQuote, imageMessage);
                 return;
             }
             sendChatGPTMessage(message, subject, messageQuote);
@@ -141,6 +143,15 @@ public class NormalGroupListener extends MessageListener {
                     .append(e.getMessage())
                     .build());
         }
+    }
+
+    private void sendImageWithMessage(Group subject, MessageChain messageQuote, ImageMessage imageMessage) {
+        log.info("Sent group image message: {}", imageMessage.getTitle());
+        subject.sendMessage(new MessageChainBuilder()
+                .append(new QuoteReply(messageQuote))
+                .append(imageMessage.getImage())
+                .append(imageMessage.getTitle())
+                .build());
     }
 
     private boolean isNeedBaiduImage(String message) {
