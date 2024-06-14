@@ -3,6 +3,7 @@ package com.mars.webchat.util;
 import com.mars.webchat.model.ImageMessage;
 import com.mars.webchat.service.impl.BaiduImageServiceImpl;
 import com.mars.webchat.service.impl.ChatGPTServiceImpl;
+import com.mars.webchat.service.impl.HighAesSmartDrawingServiceImpl;
 import com.mars.webchat.service.impl.RandomImageServiceImpl;
 import com.plexpt.chatgpt.exception.ChatException;
 import lombok.extern.slf4j.Slf4j;
@@ -37,6 +38,10 @@ public class NormalGroupListener extends MessageListener {
 
     @Autowired
     private BaiduImageServiceImpl baiduImageService;
+
+    @Autowired
+    private HighAesSmartDrawingServiceImpl highAesSmartDrawingService;
+
 
     private static List<Message> messages = new ArrayList<>();
 
@@ -136,6 +141,12 @@ public class NormalGroupListener extends MessageListener {
                 sendImageWithMessage(subject, messageQuote, imageMessage);
                 return;
             }
+            if(isNeedVolcImage(message)){
+                log.info("Need Volc Image");
+                ImageMessage imageMessage = highAesSmartDrawingService.getImage(subject, message.replace("画一个", ""));
+                sendImage(subject, messageQuote, imageMessage.getImage());
+                return;
+            }
             sendChatGPTMessage(message, subject, messageQuote);
         }catch (RuntimeException e){
             subject.sendMessage(new MessageChainBuilder()
@@ -143,6 +154,10 @@ public class NormalGroupListener extends MessageListener {
                     .append(e.getMessage())
                     .build());
         }
+    }
+
+    private boolean isNeedVolcImage(String message) {
+            return message.contains("画一个");
     }
 
     private void sendImageWithMessage(Group subject, MessageChain messageQuote, ImageMessage imageMessage) {

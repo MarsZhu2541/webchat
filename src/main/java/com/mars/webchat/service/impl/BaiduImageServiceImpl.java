@@ -1,7 +1,7 @@
 package com.mars.webchat.service.impl;
 
 import com.mars.webchat.model.ImageMessage;
-import com.mars.webchat.service.BaiduImageService;
+import com.mars.webchat.service.Text2ImageService;
 import lombok.extern.slf4j.Slf4j;
 import net.mamoe.mirai.contact.Group;
 import net.mamoe.mirai.utils.ExternalResource;
@@ -17,7 +17,7 @@ import java.util.regex.Pattern;
 
 @Service
 @Slf4j
-public class BaiduImageServiceImpl implements BaiduImageService {
+public class BaiduImageServiceImpl implements Text2ImageService {
 
     OkHttpClient client = new OkHttpClient().newBuilder().build();
     Random rand = new Random();
