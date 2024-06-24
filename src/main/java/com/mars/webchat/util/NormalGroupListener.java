@@ -3,7 +3,7 @@ package com.mars.webchat.util;
 import com.mars.webchat.model.ImageMessage;
 import com.mars.webchat.service.impl.BaiduImageServiceImpl;
 import com.mars.webchat.service.impl.ChatGPTServiceImpl;
-import com.mars.webchat.service.impl.HighAesSmartDrawingServiceImpl;
+import com.mars.webchat.service.impl.VolcEngineServiceImpl;
 import com.mars.webchat.service.impl.RandomImageServiceImpl;
 import com.plexpt.chatgpt.exception.ChatException;
 import lombok.extern.slf4j.Slf4j;
@@ -20,6 +20,8 @@ import com.plexpt.chatgpt.entity.chat.Message;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 
 @Slf4j
@@ -40,14 +42,24 @@ public class NormalGroupListener extends MessageListener {
     private BaiduImageServiceImpl baiduImageService;
 
     @Autowired
-    private HighAesSmartDrawingServiceImpl highAesSmartDrawingService;
+    private VolcEngineServiceImpl volcEngineService;
+
+    private int functionTag = 0;
+
+    private List<String> modeList = List.of("默认模式","ChatGPT对话", "豆包对话", "豆包文生图", "百度搜图", "随机小猫图片");
 
 
     private static List<Message> messages = new ArrayList<>();
+    private String intro = """
+            你好，我是AI聊天机器人，目前支持功能有:
+            1.ChatGPT对话，2.豆包对话，3.豆包文生图，4.百度搜图，5.随机小猫图片。
+            您可以@我发送"切换模式+序号"来切换到对应功能。 例如"切换模式1",
+            发送"当前模式",可以查看当前模式。
+            """;
 
     @RobotListenerHandler
     public void handleMessage(GroupMessageEvent event) {
-        String message = event.getMessage().contentToString().replace("@"+qqNumber, "");
+        String message = event.getMessage().contentToString().replace("@" + qqNumber, "");
 
         if (!(event.getMessage().get(1) instanceof At)) {
             return;
@@ -56,49 +68,109 @@ public class NormalGroupListener extends MessageListener {
             return;
         }
         log.info("Received group message: {}", message);
-
         invokeFunctionOnDemand(message, event.getSubject(), event.getMessage());
     }
 
     @RobotListenerHandler
     public void handleSelfMessage(GroupMessageSyncEvent event) {
-        String message = event.getMessage().contentToString().replace("@"+qqNumber, "");
-        if(message.contains("tc")){
-            message = message.replace("tc","");
+        String message = event.getMessage().contentToString().replace("@" + qqNumber, "");
+        if (message.contains("tc")) {
+            message = message.replace("tc", "");
             log.info("Received self message: {}", message);
             invokeFunctionOnDemand(message, event.getSubject(), event.getMessage());
         }
     }
 
-    private synchronized void sendChatGPTMessage(String message, Group subject, MessageChain message2) {
+    private void invokeFunctionOnDemand(String message, Group group, MessageChain messageChain) {
         try {
-            send(message, subject, message2);
+            if (isNeedCurrentMode(message)) {
+                sendOnlyMessage("当前模式为: " + modeList.get(functionTag), group, messageChain);
+                return;
+            }
+            if (isNeedSwitch(message)) {
+                sendSwitchModeMessage(message, group, messageChain);
+                return;
+            }
+            if (isNeedIntro(message)) {
+                sendOnlyMessage(intro, group, messageChain);
+                return;
+            }
+            switch (functionTag) {
+                case 1:
+                    sendChatGPTMessage(message, group, messageChain);
+                    break;
+                case 2:
+                    sendOnlyMessage(volcEngineService.chat(message), group, messageChain);
+                    break;
+                case 3:
+                    log.info("Need Volc Image");
+                    sendImage(volcEngineService.getImage(group, message).getImage(), group, messageChain);
+                    break;
+                case 4:
+                    log.info("Need Baidu Image");
+                    sendImageWithMessage(baiduImageService.getImage(group, message), group, messageChain);
+                    break;
+                case 5:
+                    sendImage(randomImageService.getImage(group), group, messageChain);
+                    break;
+                case 0:
+                default:
+                    sendOnlyMessage(intro, group, messageChain);
+                    break;
+            }
+
+        } catch (NumberFormatException e) {
+            sendOnlyMessage("输入有误，请重新尝试", group, messageChain);
+        } catch (RuntimeException e) {
+            group.sendMessage(new MessageChainBuilder()
+                    .append(new QuoteReply(messageChain))
+                    .append(e.getMessage())
+                    .build());
+        }
+    }
+
+    private void sendSwitchModeMessage(String message, Group group, MessageChain messageChain) {
+        functionTag = getTargetFunctionId(message);
+        try {
+            sendOnlyMessage("已切换至模式: " + modeList.get(functionTag), group, messageChain);
+        }catch (IndexOutOfBoundsException e){
+            sendOnlyMessage("输入有误，请重新尝试", group, messageChain);
+        }
+    }
+
+    private synchronized void sendChatGPTMessage(String message, Group group, MessageChain messageChain) {
+        try {
+            send(message, group, messageChain);
         } catch (ChatException e) {
-            subject.sendMessage(new MessageChainBuilder()
-                    .append(new QuoteReply(message2))
+            group.sendMessage(new MessageChainBuilder()
+                    .append(new QuoteReply(messageChain))
                     .append("出错了，憋急，等我再试一把！\n")
                     .append(e.getMessage())
                     .build());
             messages.clear();
-            send(message, subject, message2);
+            send(message, group, messageChain);
         } catch (Exception e) {
             log.error("Error when send message: ", e);
-            subject.sendMessage(new MessageChainBuilder()
-                    .append(new QuoteReply(message2))
+            group.sendMessage(new MessageChainBuilder()
+                    .append(new QuoteReply(messageChain))
                     .append("出错了，请联系管理员qq2541884980\n")
                     .append(e.getMessage())
                     .build());
         }
     }
 
-    private void send(String message, Group subject, MessageChain message2) {
+    private void send(String message, Group group, MessageChain messageChain) {
         addMessage(message, Message.Role.USER);
         String chat = chatGPTService.chat(messages);
         log.info("Sent group message: {}", chat);
         addMessage(chat, Message.Role.ASSISTANT);
-        subject.sendMessage(new MessageChainBuilder()
-                .append(new QuoteReply(message2))
-                .append(chat)
+        sendOnlyMessage(chat, group, messageChain);
+    }
+
+    private void sendOnlyMessage(String message, Group group, MessageChain messageChain) {
+        group.sendMessage(new MessageChainBuilder()
+                .append(new QuoteReply(messageChain))
+                .append(message)
                 .build());
     }
 
@@ -117,59 +189,42 @@ public class NormalGroupListener extends MessageListener {
         }
     }
 
-    private boolean isNeedCatImage(String msg){
-        return msg.contains("猫");
+    private boolean isNeedIntro(String msg) {
+        return "功能介绍".equals(msg);
     }
 
-    private void sendImage(Group subject, MessageChain chain, Image image){
+    public boolean isNeedSwitch(String msg) {
+        return Pattern.compile("切换模式-?\\d+").matcher(msg).find();
+    }
+
+    private boolean isNeedCurrentMode(String msg) {
+        return ("当前模式").equals(msg);
+    }
+
+    private int getTargetFunctionId(String msg) {
+        Matcher matcher = Pattern.compile("切换模式-?(\\d+)").matcher(msg);
+        if(matcher.find()) {
+            return Integer.parseInt(matcher.group(1));
+        }
+        return Integer.parseInt(msg.replace("切换模式", "").trim());
+    }
+
+
+    private void sendImage(Image image, Group group, MessageChain messageChain) {
         log.info("Sent group image message: {}", image.getImageId());
-        subject.sendMessage(new MessageChainBuilder()
-                .append(new QuoteReply(chain))
+        group.sendMessage(new MessageChainBuilder()
+                .append(new QuoteReply(messageChain))
                 .append(image)
                 .build());
     }
 
-    private void invokeFunctionOnDemand(String message, Group subject, MessageChain messageQuote){
-        try {
-            if(isNeedCatImage(message)){
-                sendImage(subject, messageQuote, randomImageService.getImage(subject));
-                return;
-            }
-            if(isNeedBaiduImage(message)){
-                log.info("Need Baidu Image");
-                ImageMessage imageMessage = baiduImageService.getImage(subject, message.replace("搜图", ""));
-                sendImageWithMessage(subject, messageQuote, imageMessage);
-                return;
-            }
-            if(isNeedVolcImage(message)){
-                log.info("Need Volc Image");
-                ImageMessage imageMessage = highAesSmartDrawingService.getImage(subject, message.replace("画一个", ""));
-                sendImage(subject, messageQuote, imageMessage.getImage());
-                return;
-            }
-            sendChatGPTMessage(message, subject, messageQuote);
-        }catch (RuntimeException e){
-            subject.sendMessage(new MessageChainBuilder()
-                    .append(new QuoteReply(messageQuote))
-                    .append(e.getMessage())
-                    .build());
-        }
-    }
-
-    private boolean isNeedVolcImage(String message) {
-            return message.contains("画一个");
-    }
-
-    private void sendImageWithMessage(Group subject, MessageChain messageQuote, ImageMessage imageMessage) {
+    private void sendImageWithMessage(ImageMessage imageMessage, Group group, MessageChain messageChain) {
         log.info("Sent group image message: {}", imageMessage.getTitle());
-        subject.sendMessage(new MessageChainBuilder()
-                .append(new QuoteReply(messageQuote))
+        group.sendMessage(new MessageChainBuilder()
+                .append(new QuoteReply(messageChain))
                 .append(imageMessage.getImage())
                 .append(imageMessage.getTitle())
                 .build());
     }
 
-    private boolean isNeedBaiduImage(String message) {
-        return message.contains("搜图");
-    }
 }

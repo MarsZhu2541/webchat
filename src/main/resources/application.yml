@@ -1,15 +1,19 @@
 server:
   port: 6379
 openai:
-  secret_key: sk-xxx
+  secret_key:
+volc:
+  secret_key:
+  access_key:
+  ep_id:
 itbaima:
   robot:
-    username:    #登录的QQ账号xz
-    password:       #QQ账号的密码
+    username:   #登录的QQ账号xz
+    password:      #QQ账号的密码
     login-type: password    #登录的类型，这里选择 password 表示账号密码登录
     protocol: android_pad    #协议可以选择安卓手机 android_phone 或是平板 android_pad 协议
     signer:
       version: 8.9.63   #使用的客户端版本
-      url: http://139.196.93.191:8080 #刚刚部署的签名服务器地址
+      url:  #刚刚部署的签名服务器地址
       type: fuqiuluo              #使用的签名服务器类型
-      key: 114514                 #访问秘钥，默认为114514
+      key:                  #访问秘钥，默认为114514
