@@ -49,6 +49,11 @@ public class ChatGPTServiceImpl implements ChatGPTService {
     }
 
     @Override
+    public String chat(String message) {
+        return null;
+    }
+
+    @Override
     public void chatStream(String message) {
 
         ChatGPTStream chatGPTStream = ChatGPTStream.builder()
