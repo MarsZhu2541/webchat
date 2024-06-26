@@ -8,7 +8,6 @@ import com.volcengine.ark.runtime.model.completion.chat.ChatCompletionRequest;
 import com.volcengine.ark.runtime.model.completion.chat.ChatMessage;
 import com.volcengine.ark.runtime.model.completion.chat.ChatMessageRole;
 import com.volcengine.ark.runtime.service.ArkService;
-import com.plexpt.chatgpt.entity.chat.Message;
 import com.volcengine.service.visual.IVisualService;
 import com.volcengine.service.visual.impl.VisualServiceImpl;
 import com.volcengine.service.visual.model.response.VisualHighAesSmartDrawingResponse;
@@ -19,32 +18,25 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayInputStream;
-import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
 
 
 @Service
 @Slf4j
-public class VolcEngineServiceImpl implements Text2ImageService, ChatGPTService {
+public class VolcEngineServiceImpl implements Text2ImageService, ChatGPTService<ChatMessage> {
     IVisualService visualService = VisualServiceImpl.getInstance();
     ArkService service;
     ChatCompletionRequest chatCompletionRequest;
-    final List<ChatMessage> messages = new ArrayList<>();
+    String epId;
 
-
-    public VolcEngineServiceImpl(@Value("${volc.secret_key}") String secretKey, @Value("${volc.access_key}") String accessKey
-            , @Value("${volc.ep_id}") String epId) {
+    public VolcEngineServiceImpl(@Value("${volc.secret_key}") String secretKey, @Value("${volc.access_key}") String accessKey,
+                                 @Value("${volc.ep_id}") String epId) {
         visualService.setAccessKey(accessKey);
         visualService.setSecretKey(secretKey);
         service = ArkService.builder().ak(accessKey).sk(secretKey)
                 .baseUrl("https://ark.cn-beijing.volces.com/api/v3/").region("cn-beijing").build();
-        chatCompletionRequest = ChatCompletionRequest.builder()
-                .model(epId)
-                .messages(messages)
-                .build();
-        final ChatMessage systemMessage = ChatMessage.builder().role(ChatMessageRole.SYSTEM).content("你是豆包，是由字节跳动开发的 AI 人工智能助手").build();
-        messages.add(systemMessage);
+        this.epId = epId;
     }
 
 
@@ -64,31 +56,23 @@ public class VolcEngineServiceImpl implements Text2ImageService, ChatGPTService 
     }
 
     @Override
-    public String chat(List<Message> message) {
-        return null;
+    public String chat(List<ChatMessage> messages) {
+        chatCompletionRequest = ChatCompletionRequest.builder()
+                .model(epId)
+                .messages(messages)
+                .build();
+        return service.createChatCompletion(chatCompletionRequest).getChoices().get(0).getMessage().stringContent();
     }
 
-    @Override
-    public String chat(String message) {
-        messagesSizeCheck();
-        ChatMessage userMessage = ChatMessage.builder().role(ChatMessageRole.USER).content(message).build();
-        messages.add(userMessage);
-        try {
-            ChatMessage assistantMessage = service.createChatCompletion(chatCompletionRequest).getChoices().get(0).getMessage();
-            messages.add(assistantMessage);
-            return assistantMessage.stringContent();
-        } catch (RuntimeException e) {
-            log.error("volc chat failed: ", e);
-            return "当前有" + messages.size() + "条上下文\n" + e.getMessage();
-        }
-    }
+//     try {
+//        ChatMessage assistantMessage = service.createChatCompletion(chatCompletionRequest).getChoices().get(0).getMessage();
+//        messages.add(assistantMessage);
+//        return assistantMessage.stringContent();
+//    } catch (RuntimeException e) {
+//        log.error("volc chat failed: ", e);
+//        return "当前有" + messages.size() + "条上下文\n" + e.getMessage();
+//    }
 
-    private void messagesSizeCheck() {
-        if (messages.size()>=12){
-            messages.remove(0);
-            messages.remove(0);
-        }
-    }
 
     @Override
     public void chatStream(String message) {
@@ -112,5 +96,15 @@ public class VolcEngineServiceImpl implements Text2ImageService, ChatGPTService 
 //                            }
 //                        }
 //                );
+    }
+
+    @Override
+    public ChatMessage createUserMessage(String message) {
+        return ChatMessage.builder().role(ChatMessageRole.USER).content(message).build();
+    }
+
+    @Override
+    public ChatMessage createAssistantMessage(String message) {
+        return ChatMessage.builder().role(ChatMessageRole.ASSISTANT).content(message).build();
     }
 }

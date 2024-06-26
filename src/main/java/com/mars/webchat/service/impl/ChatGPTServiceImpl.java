@@ -9,48 +9,42 @@ import com.plexpt.chatgpt.entity.chat.ChatCompletionResponse;
 import com.plexpt.chatgpt.entity.chat.Message;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+
+import javax.annotation.PostConstruct;
 import java.util.Arrays;
 import java.util.List;
 
 
 @Service
-public class ChatGPTServiceImpl implements ChatGPTService {
+public class ChatGPTServiceImpl implements ChatGPTService<Message> {
 
     @Value("${openai.secret_key}")
     private List<String> token;
+    ChatGPT chatGPT;
 
-//    @Value("${proxy.ip}")
-//    private String proxyIp;
-//    @Value("${proxy.port}")
-//    private Integer proxyPort;
-    @Override
-    public synchronized String chat(List<Message> message) {
-        //国内需要代理
-
-
-        ChatGPT chatGPT = ChatGPT.builder()
+    @PostConstruct
+    public void setUp() {
+        chatGPT = ChatGPT.builder()
 //                .proxy(Proxys.http(proxyIp, proxyPort))
                 .apiKeyList(token)
                 .timeout(900)
                 .apiHost("https://hk.xty.app") //反向代理地址
                 .build()
                 .init();
-
-        Images build = Images.builder().build();
-
-        ChatCompletion chatCompletion = ChatCompletion.builder()
-                .model(ChatCompletion.Model.GPT_3_5_TURBO_0613.getName())
-                .messages(message)
-                .maxTokens(3000)
-                .temperature(0.9)
-                .build();
-        ChatCompletionResponse response = chatGPT.chatCompletion(chatCompletion);
-        return response.getChoices().get(0).getMessage().getContent();
     }
 
+
     @Override
-    public String chat(String message) {
-        return null;
+    public String chat(List<Message> messages) {
+        ChatCompletion chatCompletion = ChatCompletion.builder()
+                .model(ChatCompletion.Model.GPT_3_5_TURBO_0613.getName())
+                .messages(messages)
+                .maxTokens(6000)
+                .temperature(0.9)
+                .build();
+
+        ChatCompletionResponse response = chatGPT.chatCompletion(chatCompletion);
+        return response.getChoices().get(0).getMessage().getContent();
     }
 
     @Override
@@ -68,5 +62,15 @@ public class ChatGPTServiceImpl implements ChatGPTService {
                 .model(ChatCompletion.Model.GPT_3_5_TURBO_0613.getName())
                 .messages(Arrays.asList(Message.of(message)))
                 .build();
+    }
+
+    @Override
+    public Message createUserMessage(String message) {
+        return Message.of(message);
+    }
+
+    @Override
+    public Message createAssistantMessage(String message) {
+        return Message.ofAssistant(message);
     }
 }

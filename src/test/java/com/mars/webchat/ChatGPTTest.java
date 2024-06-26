@@ -2,6 +2,7 @@ package com.mars.webchat;
 
 import com.mars.webchat.service.ChatGPTService;
 import com.mars.webchat.service.impl.ChatGPTServiceImpl;
+import com.mars.webchat.service.impl.ChatServiceProxy;
 import com.plexpt.chatgpt.entity.chat.Message;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,9 +15,10 @@ public class ChatGPTTest {
 
 
     private ChatGPTServiceImpl chatGPTServiceImpl = new ChatGPTServiceImpl();
+    private ChatServiceProxy<Message> serviceProxy = new ChatServiceProxy<>(chatGPTServiceImpl);
 
     @Test
     void test() {
-        System.out.println(chatGPTServiceImpl.chat(List.of(Message.of("你是chatgpt3.5吗"))));
+        System.out.println(serviceProxy.chat("你是chatgpt3.5吗"));
     }
 }

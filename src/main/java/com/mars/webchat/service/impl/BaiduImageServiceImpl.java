@@ -24,7 +24,7 @@ public class BaiduImageServiceImpl implements Text2ImageService {
 
     @Override
     public ImageMessage getImage(Group subject, String keyword) {
-        int randomNumber = rand.nextInt(100);
+        int randomNumber = rand.nextInt(20);
         String url = "https://image.baidu.com/search/acjson?tn=resultjson_com&logid=8289063633285016890&ipn=rj&ct=202426592&fp=result&cl=2&lm=-1&ie=utf-8&oe=utf-8&st=-1&z=&ic=0&" +
                 "word=" + keyword + "&pn="+randomNumber+"&rn=1&gsm=1e&1635054081427=";
         try {

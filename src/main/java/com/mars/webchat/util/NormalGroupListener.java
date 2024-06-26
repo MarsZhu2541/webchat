@@ -1,11 +1,9 @@
 package com.mars.webchat.util;
 
 import com.mars.webchat.model.ImageMessage;
-import com.mars.webchat.service.impl.BaiduImageServiceImpl;
-import com.mars.webchat.service.impl.ChatGPTServiceImpl;
-import com.mars.webchat.service.impl.VolcEngineServiceImpl;
-import com.mars.webchat.service.impl.RandomImageServiceImpl;
+import com.mars.webchat.service.impl.*;
 import com.plexpt.chatgpt.exception.ChatException;
+import com.volcengine.ark.runtime.model.completion.chat.ChatMessage;
 import lombok.extern.slf4j.Slf4j;
 import net.itbaima.robot.event.RobotListener;
 import net.itbaima.robot.event.RobotListenerHandler;
@@ -18,6 +16,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import com.plexpt.chatgpt.entity.chat.Message;
 
+import javax.annotation.PostConstruct;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -44,18 +43,33 @@ public class NormalGroupListener extends MessageListener {
     @Autowired
     private VolcEngineServiceImpl volcEngineService;
 
+    @Autowired
+    private SparkServiceImpl sparkService;
+
+    private ChatServiceProxy<Message> chatgptServiceProxy;
+    private ChatServiceProxy<ChatMessage> volcChatServiceProxy;
+    private ChatServiceProxy<SparkServiceImpl.Text> sparkChatServiceProxy;
+
+    private List<ChatServiceProxy> chatProxyList;
+
     private int functionTag = 0;
 
-    private List<String> modeList = List.of("默认模式","ChatGPT对话", "豆包对话", "豆包文生图", "百度搜图", "随机小猫图片");
-
-
-    private static List<Message> messages = new ArrayList<>();
+    private List<String> modeList = List.of("默认模式", "ChatGPT对话", "豆包对话", "讯飞星火对话", "豆包文生图", "百度搜图", "随机小猫图片");
     private String intro = """
             你好，我是AI聊天机器人，目前支持功能有:
-            1.ChatGPT对话，2.豆包对话，3.豆包文生图，4.百度搜图，5.随机小猫图片。
+            1.ChatGPT对话，2.豆包对话，3.讯飞星火对话，4.豆包文生图，5.百度搜图，6.随机小猫图片。
             您可以@我发送"切换模式+序号"来切换到对应功能。 例如"切换模式1",
             发送"当前模式",可以查看当前模式。
             """;
+
+
+    @PostConstruct
+    public void setUp() {
+        chatgptServiceProxy = new ChatServiceProxy<>(chatGPTService);
+        volcChatServiceProxy = new ChatServiceProxy<>(volcEngineService);
+        sparkChatServiceProxy = new ChatServiceProxy<>(sparkService);
+        chatProxyList = List.of(chatgptServiceProxy, volcChatServiceProxy, sparkChatServiceProxy);
+    }
 
     @RobotListenerHandler
     public void handleMessage(GroupMessageEvent event) {
@@ -96,21 +110,18 @@ public class NormalGroupListener extends MessageListener {
                 return;
             }
             switch (functionTag) {
-                case 1:
-                    sendChatGPTMessage(message, group, messageChain);
+                case 1, 2, 3:
+                    sendOnlyMessage(chatProxyList.get(functionTag - 1).chat(message), group, messageChain);
                     break;
-                case 2:
-                    sendOnlyMessage(volcEngineService.chat(message), group, messageChain);
-                    break;
-                case 3:
+                case 4:
                     log.info("Need Volc Image");
                     sendImage(volcEngineService.getImage(group, message).getImage(), group, messageChain);
                     break;
-                case 4:
+                case 5:
                     log.info("Need Baidu Image");
                     sendImageWithMessage(baiduImageService.getImage(group, message), group, messageChain);
                     break;
-                case 5:
+                case 6:
                     sendImage(randomImageService.getImage(group), group, messageChain);
                     break;
                 case 0:
@@ -122,8 +133,10 @@ public class NormalGroupListener extends MessageListener {
         } catch (NumberFormatException e) {
             sendOnlyMessage("输入有误，请重新尝试", group, messageChain);
         } catch (RuntimeException e) {
+            log.error("Error when send message: ", e);
             group.sendMessage(new MessageChainBuilder()
                     .append(new QuoteReply(messageChain))
+                    .append("出错了，请联系管理员qq2541884980")
                     .append(e.getMessage())
                     .build());
         }
@@ -133,60 +146,18 @@ public class NormalGroupListener extends MessageListener {
         functionTag = getTargetFunctionId(message);
         try {
             sendOnlyMessage("已切换至模式: " + modeList.get(functionTag), group, messageChain);
-        }catch (IndexOutOfBoundsException e){
+        } catch (IndexOutOfBoundsException e) {
             sendOnlyMessage("输入有误，请重新尝试", group, messageChain);
         }
     }
 
-    private synchronized void sendChatGPTMessage(String message, Group group, MessageChain messageChain) {
-        try {
-            send(message, group, messageChain);
-        } catch (ChatException e) {
-            group.sendMessage(new MessageChainBuilder()
-                    .append(new QuoteReply(messageChain))
-                    .append("出错了，憋急，等我再试一把！\n")
-                    .append(e.getMessage())
-                    .build());
-            messages.clear();
-            send(message, group, messageChain);
-        } catch (Exception e) {
-            log.error("Error when send message: ", e);
-            group.sendMessage(new MessageChainBuilder()
-                    .append(new QuoteReply(messageChain))
-                    .append("出错了，请联系管理员qq2541884980\n")
-                    .append(e.getMessage())
-                    .build());
-        }
-    }
-
-    private void send(String message, Group group, MessageChain messageChain) {
-        addMessage(message, Message.Role.USER);
-        String chat = chatGPTService.chat(messages);
-        log.info("Sent group message: {}", chat);
-        addMessage(chat, Message.Role.ASSISTANT);
-        sendOnlyMessage(chat, group, messageChain);
-    }
 
     private void sendOnlyMessage(String message, Group group, MessageChain messageChain) {
+        log.info("send group message: {}", message);
         group.sendMessage(new MessageChainBuilder()
                 .append(new QuoteReply(messageChain))
                 .append(message)
                 .build());
-    }
-
-
-    public static synchronized void addMessage(String chat, Message.Role role) {
-        if (role == Message.Role.USER) {
-            messages.add(Message.of(chat));
-        } else {
-            messages.add(Message.ofAssistant(chat));
-        }
-        if (messages.size() >= 12) {
-            messages.remove(0);
-            messages.remove(0);
-            messages.remove(0);
-            messages.remove(0);
-        }
     }
 
     private boolean isNeedIntro(String msg) {
@@ -203,7 +174,7 @@ public class NormalGroupListener extends MessageListener {
 
     private int getTargetFunctionId(String msg) {
         Matcher matcher = Pattern.compile("切换模式-?(\\d+)").matcher(msg);
-        if(matcher.find()) {
+        if (matcher.find()) {
             return Integer.parseInt(matcher.group(1));
         }
         return Integer.parseInt(msg.replace("切换模式", "").trim());
