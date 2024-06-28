@@ -54,13 +54,16 @@ public class NormalGroupListener extends MessageListener {
 
     private int functionTag = 0;
 
-    private List<String> modeList = List.of("默认模式", "ChatGPT对话", "豆包对话", "讯飞星火对话", "豆包文生图", "百度搜图", "随机小猫图片");
-    private String intro = """
+    private final List<String> modeList = List.of("默认模式", "ChatGPT对话", "豆包对话", "讯飞星火对话", "豆包文生图", "百度搜图", "随机小猫图片");
+    private final String intro = """
             你好，我是AI聊天机器人，目前支持功能有:
             1.ChatGPT对话，2.豆包对话，3.讯飞星火对话，4.豆包文生图，5.百度搜图，6.随机小猫图片。
             您可以@我发送"切换模式+序号"来切换到对应功能。 例如"切换模式1",
             发送"当前模式",可以查看当前模式。
             """;
+
+    private final ThreadLocal<Group> group = new ThreadLocal<>();
+    private final ThreadLocal<MessageChain> messageChain = new ThreadLocal<>();
 
 
     @PostConstruct
@@ -96,42 +99,43 @@ public class NormalGroupListener extends MessageListener {
     }
 
     private void invokeFunctionOnDemand(String message, Group group, MessageChain messageChain) {
+        setUpEvent(group, messageChain);
         try {
             if (isNeedCurrentMode(message)) {
-                sendOnlyMessage("当前模式为: " + modeList.get(functionTag), group, messageChain);
+                sendOnlyMessage("当前模式为: " + modeList.get(functionTag));
                 return;
             }
             if (isNeedSwitch(message)) {
-                sendSwitchModeMessage(message, group, messageChain);
+                sendSwitchModeMessage(message);
                 return;
             }
             if (isNeedIntro(message)) {
-                sendOnlyMessage(intro, group, messageChain);
+                sendOnlyMessage(intro);
                 return;
             }
             switch (functionTag) {
                 case 1, 2, 3:
-                    sendOnlyMessage(chatProxyList.get(functionTag - 1).chat(message), group, messageChain);
+                    sendOnlyMessage(chatProxyList.get(functionTag - 1).chat(message));
                     break;
                 case 4:
                     log.info("Need Volc Image");
-                    sendImage(volcEngineService.getImage(group, message).getImage(), group, messageChain);
+                    sendImage(volcEngineService.getImage(group, message).getImage());
                     break;
                 case 5:
                     log.info("Need Baidu Image");
-                    sendImageWithMessage(baiduImageService.getImage(group, message), group, messageChain);
+                    sendImageWithMessage(baiduImageService.getImage(group, message));
                     break;
                 case 6:
-                    sendImage(randomImageService.getImage(group), group, messageChain);
+                    sendImage(randomImageService.getImage(group));
                     break;
                 case 0:
                 default:
-                    sendOnlyMessage(intro, group, messageChain);
+                    sendOnlyMessage(intro);
                     break;
             }
 
         } catch (NumberFormatException e) {
-            sendOnlyMessage("输入有误，请重新尝试", group, messageChain);
+            sendOnlyMessage("输入有误，请重新尝试");
         } catch (RuntimeException e) {
             log.error("Error when send message: ", e);
             group.sendMessage(new MessageChainBuilder()
@@ -139,29 +143,38 @@ public class NormalGroupListener extends MessageListener {
                     .append("出错了，请联系管理员qq2541884980")
                     .append(e.getMessage())
                     .build());
+        }finally {
+            this.group.remove();
+            this.messageChain.remove();
         }
     }
 
-    private void sendSwitchModeMessage(String message, Group group, MessageChain messageChain) {
+    private void setUpEvent(Group group, MessageChain messageChain) {
+        this.group.set(group);
+        this.messageChain.set(messageChain);
+    }
+
+
+    private void sendSwitchModeMessage(String message) {
         functionTag = getTargetFunctionId(message);
         try {
-            sendOnlyMessage("已切换至模式: " + modeList.get(functionTag), group, messageChain);
+            sendOnlyMessage("已切换至模式: " + modeList.get(functionTag));
         } catch (IndexOutOfBoundsException e) {
-            sendOnlyMessage("输入有误，请重新尝试", group, messageChain);
+            sendOnlyMessage("输入有误，请重新尝试");
         }
     }
 
 
-    private void sendOnlyMessage(String message, Group group, MessageChain messageChain) {
+    private void sendOnlyMessage(String message) {
         log.info("send group message: {}", message);
-        group.sendMessage(new MessageChainBuilder()
-                .append(new QuoteReply(messageChain))
+        group.get().sendMessage(new MessageChainBuilder()
+                .append(new QuoteReply(messageChain.get()))
                 .append(message)
                 .build());
     }
 
     private boolean isNeedIntro(String msg) {
-        return "功能介绍".equals(msg);
+        return "功能介绍".equals(msg.trim());
     }
 
     public boolean isNeedSwitch(String msg) {
@@ -169,7 +182,7 @@ public class NormalGroupListener extends MessageListener {
     }
 
     private boolean isNeedCurrentMode(String msg) {
-        return ("当前模式").equals(msg);
+        return ("当前模式").equals(msg.trim());
     }
 
     private int getTargetFunctionId(String msg) {
@@ -181,18 +194,18 @@ public class NormalGroupListener extends MessageListener {
     }
 
 
-    private void sendImage(Image image, Group group, MessageChain messageChain) {
+    private void sendImage(Image image) {
         log.info("Sent group image message: {}", image.getImageId());
-        group.sendMessage(new MessageChainBuilder()
-                .append(new QuoteReply(messageChain))
+        group.get().sendMessage(new MessageChainBuilder()
+                .append(new QuoteReply(messageChain.get()))
                 .append(image)
                 .build());
     }
 
-    private void sendImageWithMessage(ImageMessage imageMessage, Group group, MessageChain messageChain) {
+    private void sendImageWithMessage(ImageMessage imageMessage) {
         log.info("Sent group image message: {}", imageMessage.getTitle());
-        group.sendMessage(new MessageChainBuilder()
-                .append(new QuoteReply(messageChain))
+        group.get().sendMessage(new MessageChainBuilder()
+                .append(new QuoteReply(messageChain.get()))
                 .append(imageMessage.getImage())
                 .append(imageMessage.getTitle())
                 .build());
