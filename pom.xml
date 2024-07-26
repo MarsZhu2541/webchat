@@ -49,6 +49,12 @@
             <groupId>com.volcengine</groupId>
             <artifactId>volc-sdk-java</artifactId>
             <version>1.0.166</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.google.guava</groupId>
+                    <artifactId>guava</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>javax.annotation</groupId>
@@ -58,7 +64,7 @@
         <dependency>
             <groupId>com.volcengine</groupId>
             <artifactId>volcengine-java-sdk-ark-runtime</artifactId>
-            <version>LATEST</version>
+            <version>0.1.115</version>
         </dependency>
     </dependencies>
 

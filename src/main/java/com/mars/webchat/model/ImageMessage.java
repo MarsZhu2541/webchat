@@ -14,4 +14,12 @@ public class ImageMessage {
         this.image = image;
         this.title = title;
     }
+
+    public ImageMessage(String title) {
+        this.title = title;
+    }
+
+    public ImageMessage(Image image) {
+        this.image = image;
+    }
 }

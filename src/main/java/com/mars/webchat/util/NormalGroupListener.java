@@ -2,7 +2,6 @@ package com.mars.webchat.util;
 
 import com.mars.webchat.model.ImageMessage;
 import com.mars.webchat.service.impl.*;
-import com.plexpt.chatgpt.exception.ChatException;
 import com.volcengine.ark.runtime.model.completion.chat.ChatMessage;
 import lombok.extern.slf4j.Slf4j;
 import net.itbaima.robot.event.RobotListener;
@@ -17,8 +16,8 @@ import org.springframework.beans.factory.annotation.Value;
 import com.plexpt.chatgpt.entity.chat.Message;
 
 import javax.annotation.PostConstruct;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -102,7 +101,7 @@ public class NormalGroupListener extends MessageListener {
         setUpEvent(group, messageChain);
         try {
             if (isNeedCurrentMode(message)) {
-                sendOnlyMessage("当前模式为: " + modeList.get(functionTag));
+                sendImageMessage("当前模式为: " + modeList.get(functionTag));
                 return;
             }
             if (isNeedSwitch(message)) {
@@ -110,44 +109,45 @@ public class NormalGroupListener extends MessageListener {
                 return;
             }
             if (isNeedIntro(message)) {
-                sendOnlyMessage(intro);
+                sendImageMessage(intro);
                 return;
             }
             switch (functionTag) {
                 case 1, 2, 3:
-                    sendOnlyMessage(chatProxyList.get(functionTag - 1).chat(message));
+                    sendImageMessage(chatProxyList.get(functionTag - 1).chat(message));
                     break;
                 case 4:
                     log.info("Need Volc Image");
-                    sendImage(volcEngineService.getImage(group, message).getImage());
+                    sendImageMessage(volcEngineService.getImage(group, message).getImage());
                     break;
                 case 5:
                     log.info("Need Baidu Image");
-                    sendImageWithMessage(baiduImageService.getImage(group, message));
+                    sendImageMessage(baiduImageService.getImage(group, message));
                     break;
                 case 6:
-                    sendImage(randomImageService.getImage(group));
+                    sendImageMessage(randomImageService.getImage(group));
                     break;
                 case 0:
                 default:
-                    sendOnlyMessage(intro);
+                    sendImageMessage(intro);
                     break;
             }
 
         } catch (NumberFormatException e) {
-            sendOnlyMessage("输入有误，请重新尝试");
+            sendImageMessage("输入有误，请重新尝试");
         } catch (RuntimeException e) {
             log.error("Error when send message: ", e);
-            group.sendMessage(new MessageChainBuilder()
-                    .append(new QuoteReply(messageChain))
-                    .append("出错了，请联系管理员qq2541884980")
-                    .append(e.getMessage())
-                    .build());
-        }finally {
+            sendImageMessage("出错了，请联系管理员qq2541884980\n" + e.getMessage());
+        } finally {
             this.group.remove();
             this.messageChain.remove();
         }
     }
+
+    private void sendChatGPTMessage(int functionTag, String message) {
+        chatProxyList.get(functionTag - 1).chat(message);
+    }
+
 
     private void setUpEvent(Group group, MessageChain messageChain) {
         this.group.set(group);
@@ -156,21 +156,14 @@ public class NormalGroupListener extends MessageListener {
 
 
     private void sendSwitchModeMessage(String message) {
+        int previousTag = functionTag;
         functionTag = getTargetFunctionId(message);
         try {
-            sendOnlyMessage("已切换至模式: " + modeList.get(functionTag));
+            sendImageMessage("已切换至模式: " + modeList.get(functionTag));
         } catch (IndexOutOfBoundsException e) {
-            sendOnlyMessage("输入有误，请重新尝试");
+            functionTag = previousTag;
+            sendImageMessage("输入有误，请重新尝试");
         }
-    }
-
-
-    private void sendOnlyMessage(String message) {
-        log.info("send group message: {}", message);
-        group.get().sendMessage(new MessageChainBuilder()
-                .append(new QuoteReply(messageChain.get()))
-                .append(message)
-                .build());
     }
 
     private boolean isNeedIntro(String msg) {
@@ -193,22 +186,21 @@ public class NormalGroupListener extends MessageListener {
         return Integer.parseInt(msg.replace("切换模式", "").trim());
     }
 
-
-    private void sendImage(Image image) {
-        log.info("Sent group image message: {}", image.getImageId());
-        group.get().sendMessage(new MessageChainBuilder()
-                .append(new QuoteReply(messageChain.get()))
-                .append(image)
-                .build());
+    private void sendImageMessage(Image image) {
+        ImageMessage imageMessage = new ImageMessage(image);
+        this.sendImageMessage(imageMessage);
     }
 
-    private void sendImageWithMessage(ImageMessage imageMessage) {
+    private void sendImageMessage(String message) {
+        ImageMessage imageMessage = new ImageMessage(message);
+        this.sendImageMessage(imageMessage);
+    }
+
+    private void sendImageMessage(ImageMessage imageMessage) {
         log.info("Sent group image message: {}", imageMessage.getTitle());
-        group.get().sendMessage(new MessageChainBuilder()
-                .append(new QuoteReply(messageChain.get()))
-                .append(imageMessage.getImage())
-                .append(imageMessage.getTitle())
-                .build());
+        MessageChainBuilder builder = new MessageChainBuilder().append(new QuoteReply(messageChain.get()));
+        Optional.ofNullable(imageMessage.getImage()).ifPresent(image -> builder.append(imageMessage.getImage()));
+        Optional.ofNullable(imageMessage.getTitle()).ifPresent(title -> builder.append(imageMessage.getTitle()));
+        group.get().sendMessage(builder.build());
     }
-
 }
