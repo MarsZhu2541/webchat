@@ -9,6 +9,9 @@ volc:
 spark:
   secret_key:
   api_key:
+hunyuan:
+  secret_id:
+  secret_key:
 itbaima:
   robot:
     username:    #登录的QQ账号xz

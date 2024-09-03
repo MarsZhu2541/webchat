@@ -66,6 +66,11 @@
             <artifactId>volcengine-java-sdk-ark-runtime</artifactId>
             <version>0.1.115</version>
         </dependency>
+        <dependency>
+            <groupId>com.tencentcloudapi</groupId>
+            <artifactId>tencentcloud-sdk-java-hunyuan</artifactId>
+            <version>3.1.1090</version>
+        </dependency>
     </dependencies>
 
     <build>
