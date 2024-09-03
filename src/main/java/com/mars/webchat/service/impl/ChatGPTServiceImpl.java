@@ -3,7 +3,6 @@ package com.mars.webchat.service.impl;
 import com.mars.webchat.service.ChatGPTService;
 import com.plexpt.chatgpt.ChatGPT;
 import com.plexpt.chatgpt.ChatGPTStream;
-import com.plexpt.chatgpt.Images;
 import com.plexpt.chatgpt.entity.chat.ChatCompletion;
 import com.plexpt.chatgpt.entity.chat.ChatCompletionResponse;
 import com.plexpt.chatgpt.entity.chat.Message;
@@ -72,5 +71,10 @@ public class ChatGPTServiceImpl implements ChatGPTService<Message> {
     @Override
     public Message createAssistantMessage(String message) {
         return Message.ofAssistant(message);
+    }
+
+    @Override
+    public boolean isUserMessage(Message message) {
+        return "user".equals(message.getRole());
     }
 }

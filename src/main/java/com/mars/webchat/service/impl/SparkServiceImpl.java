@@ -58,6 +58,11 @@ public class SparkServiceImpl implements ChatGPTService<SparkServiceImpl.Text> {
         return new Text(message, "assistant");
     }
 
+    @Override
+    public boolean isUserMessage(Text message) {
+        return "user".equals(message.role);
+    }
+
     @Getter
     class SparkRequestBody {
         private final String model = "general";

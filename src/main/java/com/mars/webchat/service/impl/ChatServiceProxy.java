@@ -11,18 +11,31 @@ public class ChatServiceProxy<T> {
 
     protected final List<T> messages = new ArrayList<>();
 
-    private final int MAX = 12 ;
+    private final int MAX = 20;
     private final int TOREMOVE = 4;
 
-    private void messagesSizeCheck(){
-        if (messages.size()>=MAX){
+    private void messagesSizeCheck() {
+        if (messages.size() >= MAX) {
             messages.subList(0, TOREMOVE).clear();
         }
     }
 
     protected void beforeChat(T message) {
         messagesSizeCheck();
+        if(!messages.isEmpty()){
+            waitLastChatFinished();
+        }
         messages.add(message);
+    }
+
+    private synchronized void waitLastChatFinished() {
+        while (realService.isUserMessage(messages.get(messages.size() - 1))) {
+            try {
+                Thread.sleep(2000);
+            } catch (InterruptedException e) {
+                return;
+            }
+        }
     }
 
     protected void afterChat(T message) {
@@ -38,10 +51,16 @@ public class ChatServiceProxy<T> {
     }
 
     public String chat(String message) {
-        beforeChat(createUserMessage(message));
-        String answer = realService.chat(messages);
-        afterChat(createAssistantMessage(answer));
-        return answer;
+
+        try {
+            beforeChat(createUserMessage(message));
+            String answer = realService.chat(messages);
+            afterChat(createAssistantMessage(answer));
+            return answer;
+        } catch (RuntimeException e) {
+            messages.clear();
+        }
+        return "出错了，上下文已清除";
     }
 
     public T createUserMessage(String message) {

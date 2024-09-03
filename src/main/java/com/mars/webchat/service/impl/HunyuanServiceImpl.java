@@ -68,4 +68,9 @@ public class HunyuanServiceImpl implements ChatGPTService<Message> {
         msg.setContent(message);
         return msg;
     }
+
+    @Override
+    public boolean isUserMessage(Message message) {
+        return "user".equals(message.getRole());
+    }
 }

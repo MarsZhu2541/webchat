@@ -12,4 +12,6 @@ public interface ChatGPTService<T> {
 
     T createUserMessage(String message);
     T createAssistantMessage(String message);
+
+    boolean isUserMessage(T message);
 }

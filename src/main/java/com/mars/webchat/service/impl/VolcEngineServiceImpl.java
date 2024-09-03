@@ -107,4 +107,9 @@ public class VolcEngineServiceImpl implements Text2ImageService, ChatGPTService<
     public ChatMessage createAssistantMessage(String message) {
         return ChatMessage.builder().role(ChatMessageRole.ASSISTANT).content(message).build();
     }
+
+    @Override
+    public boolean isUserMessage(ChatMessage message) {
+        return (ChatMessageRole.USER.equals(message.getRole()));
+    }
 }
