@@ -57,10 +57,10 @@ public class ChatServiceProxy<T> {
             String answer = realService.chat(messages);
             afterChat(createAssistantMessage(answer));
             return answer;
-        } catch (RuntimeException e) {
+        } catch (Exception e) {
             messages.clear();
+            return "出错了，上下文已清除";
         }
-        return "出错了，上下文已清除";
     }
 
     public T createUserMessage(String message) {

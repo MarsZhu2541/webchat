@@ -38,7 +38,6 @@ public class ChatGPTServiceImpl implements ChatGPTService<Message> {
         ChatCompletion chatCompletion = ChatCompletion.builder()
                 .model(ChatCompletion.Model.GPT_3_5_TURBO_0613.getName())
                 .messages(messages)
-                .maxTokens(6000)
                 .temperature(0.9)
                 .build();
 
