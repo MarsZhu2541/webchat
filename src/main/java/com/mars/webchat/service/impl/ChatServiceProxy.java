@@ -1,10 +1,12 @@
 package com.mars.webchat.service.impl;
 
 import com.mars.webchat.service.ChatGPTService;
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.ArrayList;
 import java.util.List;
 
+@Slf4j
 public class ChatServiceProxy<T> {
 
     private ChatGPTService<T> realService;
@@ -59,7 +61,8 @@ public class ChatServiceProxy<T> {
             return answer;
         } catch (Exception e) {
             messages.clear();
-            return "出错了，上下文已清除";
+            log.error("Chat error", e);
+            return "出错了，上下文已清除, "+ e.getMessage();
         }
     }
 

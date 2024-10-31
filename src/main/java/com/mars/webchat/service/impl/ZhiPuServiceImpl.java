@@ -21,6 +21,7 @@ import org.springframework.stereotype.Service;
 import java.io.IOException;
 import java.net.URL;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 
 @Service
@@ -30,7 +31,9 @@ public class ZhiPuServiceImpl implements Text2ImageService, ChatGPTService<ChatM
     private static ClientV4 client;
 
     public ZhiPuServiceImpl(@Value("${zhipu.api_key}") String api_key) {
-        client = new ClientV4.Builder(api_key).enableTokenCache().build();
+        client = new ClientV4.Builder(api_key)
+                .networkConfig(1,1,1,1, TimeUnit.MINUTES)
+                .enableTokenCache().build();
     }
 
     @Override
