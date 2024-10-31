@@ -51,20 +51,24 @@ public class NormalGroupListener extends MessageListener {
     @Autowired
     private StableDiffusionServiceImpl stableDiffusionService;
 
+    @Autowired
+    private ZhiPuServiceImpl zhiPuService;
+
     private ChatServiceProxy<Message> chatgptServiceProxy;
     private ChatServiceProxy<ChatMessage> volcChatServiceProxy;
     private ChatServiceProxy<SparkServiceImpl.Text> sparkChatServiceProxy;
     private ChatServiceProxy<com.tencentcloudapi.hunyuan.v20230901.models.Message> hunyuanChatServiceProxy;
+    private ChatServiceProxy<com.zhipu.oapi.service.v4.model.ChatMessage> zhiPuServiceProxy;
 
     private List<ChatServiceProxy> chatProxyList;
 
     private int functionTag = 0;
 
     private final List<String> modeList = List.of("默认模式", "ChatGPT对话", "豆包对话", "讯飞星火对话", "混元对话",
-            "豆包文生图", "Stable Diffusion", "百度搜图", "随机小猫图片");
+            "智谱对话", "豆包文生图", "智谱文生视频", "Stable Diffusion", "百度搜图", "随机小猫图片");
     private final String intro = """
             你好，我是AI聊天机器人，目前支持功能有:
-            1.ChatGPT对话，2.豆包对话，3.讯飞星火对话，4.混元对话，5.豆包文生图，6.Stable Diffusion，7.百度搜图，8.随机小猫图片。
+            1.ChatGPT对话，2.豆包对话，3.讯飞星火对话，4.混元对话，5.智谱对话，6.豆包文生图，7.智谱文生视频，8.Stable Diffusion，9.百度搜图，10.随机小猫图片。
             您可以@我发送"切换模式+序号"来切换到对应功能。 例如"切换模式1",
             发送"当前模式",可以查看当前模式。
             """;
@@ -79,7 +83,9 @@ public class NormalGroupListener extends MessageListener {
         volcChatServiceProxy = new ChatServiceProxy<>(volcEngineService);
         sparkChatServiceProxy = new ChatServiceProxy<>(sparkService);
         hunyuanChatServiceProxy = new ChatServiceProxy<>(hunyuanService);
-        chatProxyList = List.of(chatgptServiceProxy, volcChatServiceProxy, sparkChatServiceProxy, hunyuanChatServiceProxy);
+        zhiPuServiceProxy = new ChatServiceProxy<>(zhiPuService);
+        chatProxyList = List.of(chatgptServiceProxy, volcChatServiceProxy, sparkChatServiceProxy,
+                hunyuanChatServiceProxy, zhiPuServiceProxy);
     }
 
     @RobotListenerHandler
@@ -122,22 +128,26 @@ public class NormalGroupListener extends MessageListener {
                 return;
             }
             switch (functionTag) {
-                case 1, 2, 3, 4:
+                case 1, 2, 3, 4, 5:
                     sendImageMessage(chatProxyList.get(functionTag - 1).chat(message));
                     break;
-                case 5:
+                case 6:
                     log.info("Need Volc Image");
                     sendImageMessage(volcEngineService.getImage(group, message).getImage());
                     break;
-                case 6:
+                case 7:
+                    log.info("Need zhipu video");
+                    sendImageMessage(zhiPuService.getImage(group, message));
+                    break;
+                case 8:
                     log.info("Need Stable Diffusion Image");
                     sendImageMessage(stableDiffusionService.getImage(group, message));
                     break;
-                case 7:
+                case 9:
                     log.info("Need Baidu Image");
                     sendImageMessage(baiduImageService.getImage(group, message));
                     break;
-                case 8:
+                case 10:
                     sendImageMessage(randomImageService.getImage(group));
                     break;
                 case 0:
