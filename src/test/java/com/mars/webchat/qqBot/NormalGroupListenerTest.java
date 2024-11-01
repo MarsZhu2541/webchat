@@ -1,4 +1,4 @@
-package com.mars.webchat.util;
+package com.mars.webchat.qqBot;
 
 import org.junit.jupiter.api.Test;
 

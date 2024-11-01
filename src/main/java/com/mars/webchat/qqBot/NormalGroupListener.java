@@ -1,4 +1,4 @@
-package com.mars.webchat.util;
+package com.mars.webchat.qqBot;
 
 import com.mars.webchat.model.ImageMessage;
 import com.mars.webchat.service.impl.*;
