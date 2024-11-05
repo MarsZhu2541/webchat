@@ -1,25 +1,33 @@
 package com.mars.webchat.qqBot;
 
 import com.mars.webchat.model.ImageMessage;
+import com.mars.webchat.model.News;
 import com.mars.webchat.service.impl.*;
 import com.volcengine.ark.runtime.model.completion.chat.ChatMessage;
 import lombok.extern.slf4j.Slf4j;
 import net.itbaima.robot.event.RobotListener;
 import net.itbaima.robot.event.RobotListenerHandler;
 import net.itbaima.robot.listener.MessageListener;
+import net.mamoe.mirai.contact.Contact;
 import net.mamoe.mirai.contact.Group;
 import net.mamoe.mirai.event.events.GroupMessageEvent;
 import net.mamoe.mirai.event.events.GroupMessageSyncEvent;
 import net.mamoe.mirai.message.data.*;
+import net.mamoe.mirai.utils.ExternalResource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import com.plexpt.chatgpt.entity.chat.Message;
 
 import javax.annotation.PostConstruct;
+import java.io.IOException;
+import java.net.URL;
 import java.util.List;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+
+import static com.mars.webchat.qqBot.NewsTimerTask.creatMessageChain;
 
 
 @Slf4j
@@ -54,6 +62,12 @@ public class NormalGroupListener extends MessageListener {
     @Autowired
     private ZhiPuServiceImpl zhiPuService;
 
+    @Autowired
+    private TouTiaoNewsServiceImpl touTiaoNewsService;
+
+    @Autowired
+    private TencentNewsServiceImpl tencentNewsService;
+
     private ChatServiceProxy<Message> chatgptServiceProxy;
     private ChatServiceProxy<ChatMessage> volcChatServiceProxy;
     private ChatServiceProxy<SparkServiceImpl.Text> sparkChatServiceProxy;
@@ -65,10 +79,10 @@ public class NormalGroupListener extends MessageListener {
     private int functionTag = 0;
 
     private final List<String> modeList = List.of("默认模式", "ChatGPT对话", "豆包对话", "讯飞星火对话", "混元对话",
-            "智谱对话", "豆包文生图", "智谱文生视频", "Stable Diffusion", "百度搜图", "随机小猫图片");
+            "智谱对话", "豆包文生图", "智谱文生视频", "Stable Diffusion", "百度搜图", "随机小猫图片", "头条新闻", "腾讯新闻");
     private final String intro = """
             你好，我是AI聊天机器人，目前支持功能有:
-            1.ChatGPT对话，2.豆包对话，3.讯飞星火对话，4.混元对话，5.智谱对话，6.豆包文生图，7.智谱文生视频，8.Stable Diffusion，9.百度搜图，10.随机小猫图片。
+            1.ChatGPT对话，2.豆包对话，3.讯飞星火对话，4.混元对话，5.智谱对话，6.豆包文生图，7.智谱文生视频，8.Stable Diffusion，9.百度搜图，10.随机小猫图片，10.头条新闻，12.腾讯新闻。
             您可以@我发送"切换模式+序号"来切换到对应功能。 例如"切换模式1",
             发送"当前模式",可以查看当前模式。
             """;
@@ -115,16 +129,23 @@ public class NormalGroupListener extends MessageListener {
     private void invokeFunctionOnDemand(String message, Group group, MessageChain messageChain) {
         setUpEvent(group, messageChain);
         try {
+            if (isNeedIntro(message)) {
+                sendImageMessage(intro);
+                return;
+            }
+
             if (isNeedCurrentMode(message)) {
                 sendImageMessage("当前模式为: " + modeList.get(functionTag));
                 return;
             }
+
             if (isNeedSwitch(message)) {
                 sendSwitchModeMessage(message);
-                return;
-            }
-            if (isNeedIntro(message)) {
-                sendImageMessage(intro);
+                if (functionTag == 11) {
+                    sendNewsMessage(touTiaoNewsService.getNews(), group);
+                } else if (functionTag == 12) {
+                    sendNewsMessage(tencentNewsService.getNews(), group);
+                }
                 return;
             }
             switch (functionTag) {
@@ -150,21 +171,42 @@ public class NormalGroupListener extends MessageListener {
                 case 10:
                     sendImageMessage(randomImageService.getImage(group));
                     break;
+                case 11:
+                    sendNewsMessage(touTiaoNewsService.getNews(), group);
+                    break;
+                case 12:
+                    sendNewsMessage(tencentNewsService.getNews(), group);
+                    break;
                 case 0:
                 default:
                     sendImageMessage(intro);
                     break;
             }
 
-        } catch (NumberFormatException e) {
+        } catch (
+                NumberFormatException e) {
             sendImageMessage("输入有误，请重新尝试");
-        } catch (RuntimeException e) {
+        } catch (
+                RuntimeException e) {
             log.error("Error when send message: ", e);
             sendImageMessage("出错了，请联系管理员qq2541884980\n" + e.getMessage());
         } finally {
             this.group.remove();
             this.messageChain.remove();
         }
+    }
+
+    private void sendNewsMessage(News news, Contact contact) {
+        List<ImageMessage> messages = news.getData().subList(0, 10).stream().map(newsInfo -> {
+            try {
+                return new ImageMessage(ExternalResource.uploadAsImage(new URL(newsInfo.getImage().getUrl()).openStream(), contact),
+                        newsInfo.getTitle() + "\n" + newsInfo.getUrl().split("\\?")[0]);
+
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }).collect(Collectors.toList());
+        group.get().sendMessage(creatMessageChain(messages));
     }
 
 

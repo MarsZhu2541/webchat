@@ -2,7 +2,7 @@ package com.mars.webchat.qqBot;
 
 import com.mars.webchat.model.ImageMessage;
 import com.mars.webchat.model.News;
-import com.mars.webchat.service.impl.TouTiaoNewsServiceImpl;
+import com.mars.webchat.service.impl.TencentNewsServiceImpl;
 import lombok.extern.slf4j.Slf4j;
 import net.itbaima.robot.service.RobotService;
 import net.mamoe.mirai.message.data.Message;
@@ -30,7 +30,7 @@ public class NewsTimerTask {
     private RobotService robotService;
 
     @Autowired
-    private TouTiaoNewsServiceImpl touTiaoNewsService;
+    private TencentNewsServiceImpl newsService;
 
     @Value("${itbaima.robot.taskGroup}")
     private long groupNumber;
@@ -39,7 +39,7 @@ public class NewsTimerTask {
     @Scheduled(cron = "0 0 7 * * *")
     public void sendDailyNews() {
         log.info("Start cronjob");
-        robotService.sendMessageToGroup(groupNumber, createNewsMessage(touTiaoNewsService.getNews()));
+        robotService.sendMessageToGroup(groupNumber, createNewsMessage(newsService.getNews()));
     }
 
     private Message createNewsMessage(News news) {
@@ -57,18 +57,19 @@ public class NewsTimerTask {
         return creatMessageChain(messages);
     }
 
-    private MessageChain creatMessageChain(List<ImageMessage> messages) {
+    public static MessageChain creatMessageChain(List<ImageMessage> messages) {
 
         Date today = new Date();
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy年MM月dd号");
         String dateString = sdf.format(today);
 
         MessageChainBuilder builder = new MessageChainBuilder();
-        builder.append("尊敬的群友们早上好，今天是").append(dateString).append(", 以下是今日早报:\n");
+        builder.append("群友们早上好，今天是").append(dateString).append(", 以下是今日早报:\n");
         messages.forEach(imageMessage -> {
             builder.append("\n");
             Optional.ofNullable(imageMessage.getImage()).ifPresent(image -> builder.append(imageMessage.getImage()));
             Optional.ofNullable(imageMessage.getTitle()).ifPresent(title -> builder.append(imageMessage.getTitle()));
+            builder.append("\n");
         });
         return builder.build();
     }
