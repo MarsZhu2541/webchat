@@ -1,4 +1,4 @@
-package com.mars.webchat.service.impl;
+package com.mars.webchat.util;
 
 import com.mars.webchat.service.ChatGPTService;
 import lombok.extern.slf4j.Slf4j;
@@ -13,12 +13,12 @@ public class ChatServiceProxy<T> {
 
     protected final List<T> messages = new ArrayList<>();
 
-    private final int MAX = 20;
-    private final int TOREMOVE = 4;
+    private static final int MAX = 20;
+    private static final int TO_REMOVE = 4;
 
     private void messagesSizeCheck() {
         if (messages.size() >= MAX) {
-            messages.subList(0, TOREMOVE).clear();
+            messages.subList(0, TO_REMOVE).clear();
         }
     }
 

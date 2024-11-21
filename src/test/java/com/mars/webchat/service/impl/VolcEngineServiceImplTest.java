@@ -1,5 +1,5 @@
 package com.mars.webchat.service.impl;
-import com.plexpt.chatgpt.entity.chat.Message;
+import com.mars.webchat.util.ChatServiceProxy;
 import com.volcengine.ark.runtime.model.completion.chat.ChatMessage;
 import org.junit.jupiter.api.Test;
 

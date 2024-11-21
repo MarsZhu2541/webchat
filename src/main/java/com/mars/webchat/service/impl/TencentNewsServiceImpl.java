@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import com.mars.webchat.model.News;
 import com.mars.webchat.model.TencentNews;
 import com.mars.webchat.service.NewsService;
+import lombok.extern.slf4j.Slf4j;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
@@ -14,6 +15,7 @@ import java.io.IOException;
 import static com.mars.webchat.model.TencentNews.toNews;
 
 @Service
+@Slf4j
 public class TencentNewsServiceImpl implements NewsService {
     OkHttpClient client = new OkHttpClient().newBuilder().build();
     Gson gson = new Gson();
@@ -26,7 +28,9 @@ public class TencentNewsServiceImpl implements NewsService {
                 .build();
         try {
             Response response = client.newCall(request).execute();
-            return toNews(gson.fromJson(response.body().string(), TencentNews.class));
+            News news = toNews(gson.fromJson(response.body().string(), TencentNews.class));
+            log.info("got {} pieces of news", news.getData().size());
+            return news;
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

@@ -1,8 +1,7 @@
 package com.mars.webchat.service.impl;
 
+import com.mars.webchat.util.ChatServiceProxy;
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 class SparkServiceImplTest {
 

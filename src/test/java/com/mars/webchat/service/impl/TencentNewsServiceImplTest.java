@@ -9,6 +9,9 @@ class TencentNewsServiceImplTest {
     @Test
     void test(){
         News news = new TencentNewsServiceImpl().getNews();
+        news.getData().forEach(newsInfo -> {
+            System.out.println(newsInfo.getTitle());
+        });
     }
 
 }

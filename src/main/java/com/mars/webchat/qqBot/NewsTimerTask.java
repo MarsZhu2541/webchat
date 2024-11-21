@@ -39,7 +39,13 @@ public class NewsTimerTask {
     @Scheduled(cron = "0 0 7 * * *")
     public void sendDailyNews() {
         log.info("Start cronjob");
-        robotService.sendMessageToGroup(groupNumber, createNewsMessage(newsService.getNews()));
+        try{
+            robotService.sendMessageToGroup(groupNumber, createNewsMessage(newsService.getNews()));
+        }catch (RuntimeException e){
+            log.error("run cronjob failed", e);
+            robotService.sendMessageToGroup(groupNumber, e.getMessage());
+        }
+
     }
 
     private Message createNewsMessage(News news) {
